@@ -272,21 +272,21 @@ ith_results = Results[[i]]
 
 -   Total = Transactional + Nontransactional
 
-```{r, echo=F}
+```{r, echo=F, fig.width=10, fig.height=5}
 j=1
 print(ith_results[[j]])
 ```
 
 ### 🟨 Transactional
 
-```{r, echo=F}
+```{r, echo=F, fig.width=10, fig.height=5}
 j=2
 print(ith_results[[j]])
 ```
 
 ### 🟨 NonTransactional
 
-```{r, echo=F}
+```{r, echo=F, fig.width=10, fig.height=5}
 j=3
 print(ith_results[[j]])
 ```
