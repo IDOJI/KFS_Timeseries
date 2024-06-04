@@ -7,7 +7,7 @@ Time-series data analysis of Korea Forest Service (KFS)
 
 
 # 1.Timeseries plots
-https://htmlpreview.github.io/?https://github.com/IDOJI/KFS_Timeseries/blob/main/R Code_1.Timeseries Plots/KFS_timeseries.html
+https://htmlpreview.github.io/?https://github.com/IDOJI/KFS_Timeseries/blob/main/R%20Code_1.Timeseries%20Plots/KFS_timeseries.html
 
 
 # 2. Data Extraction Code
