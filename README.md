@@ -1,15 +1,32 @@
-# KFS_Timeseries
-Time-series data analysis of Korea Forest Service
-
-# Hompage
-https://www.forest.go.kr/kfsweb/kfs/idx/Index.do
+# Project summary
+Time-series data analysis of Korea Forest Service (KFS)
 
 # Duration (mdy)
 03.22.24 ~ current
 
-# Data Description
 
 
-# Results
-## Timeseries plots
-https://htmlpreview.github.io/?https://github.com/IDOJI/KFS_Timeseries/blob/main/KFS_timeseries.html
+# 1.Timeseries plots
+https://htmlpreview.github.io/?https://github.com/IDOJI/KFS_Timeseries/blob/main/R Code_1.Timeseries Plots/KFS_timeseries.html
+
+
+# 2. Data Extraction Code
+## 1.Rearrage YB names
+
+## 2.Grouping L2 using clustering
+
+## 3.Grouping L3 using clustering
+
+## 4.Re-grouping L3 
+
+## 5.Combine heading and raw-data
+
+## 6.Extract data corresponding to our objective
+
+
+
+
+# Reference
+## KFS homepage
+https://www.forest.go.kr/kfsweb/kfs/idx/Index.do
+
