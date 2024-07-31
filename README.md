@@ -1,3 +1,7 @@
+# ✅ Notion Page
+https://idoji.notion.site/KFS-Timeseries-e4fb4317780e46559302902f2a68cd08?pvs=4
+
+
 # 🟥 Project summary
 Time-series data analysis of Korea Forest Service (KFS)
 
