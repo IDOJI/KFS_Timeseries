@@ -1,13 +1,8 @@
 # 🟥 Load Functions & Packages ##########################################################################
 # rm(list = ls())
-
-Sys.setlocale("LC_ALL", "en_US.UTF-8")
-
-## 🟩Install and loading Packages ================================
+## 🟨Install and loading Packages ================================
 install_packages = function(packages, load=TRUE) {
-  # load : load the packages after installation?
-  for(pkg in packages) {
-    if (!require(pkg, character.only = TRUE)) {
+  # load : load the packages after installation?    if (!require(pkg, character.only = TRUE)) {
       install.packages(pkg)
     }
     
@@ -42,14 +37,42 @@ select = dplyr::select
 
 
 ## 🟧Loading my functions ======================================================
-load_functions = function(path_functions){
-  list.files(path_functions, full.names = T) %>%
-    purrr::walk(source)
+# R 함수 파일들을 로드하는 함수
+load_functions <- function(path_functions) {
+  list.files(path_functions, pattern = "\\.R$", full.names = TRUE) %>%
+    walk(~try(source(.x), silent = TRUE))
 }
-path_list = list()
-path_list[1] = "/Users/Ido/Library/CloudStorage/Dropbox/1.GitHub/R___refineR/R"
-path_list[2] = "/Users/Ido/Library/CloudStorage/Dropbox/1.GitHub/R___StatsR/R"
-Load = sapply(path_list, load_functions)
+
+# 주어진 경로에서 자동으로 R 폴더를 찾고 함수를 읽는 함수
+load_r_functions_from_path <- function(paths) {
+  walk(paths, ~{
+    # 주어진 경로가 디렉토리인지 확인
+    if (dir.exists(.x)) {
+      # R 폴더 경로 생성
+      r_folder_path <- file.path(.x, "R")
+      # R 폴더가 존재하는지 확인
+      if (dir.exists(r_folder_path)) {
+        load_functions(r_folder_path)
+        message("R 폴더의 함수들을 로드했습니다: ", r_folder_path)
+      } else {
+        message("R 폴더가 존재하지 않습니다: ", r_folder_path)
+      }
+    } else {
+      message("유효한 디렉토리가 아닙니다: ", .x)
+    }
+  })
+}
+
+path_packages = c("/Users/Ido/Library/CloudStorage/GoogleDrive-clair.de.lune.404@gmail.com/My Drive/GitHub/refineR",
+                  "/Users/Ido/Library/CloudStorage/GoogleDrive-clair.de.lune.404@gmail.com/My Drive/GitHub/StatsR")
+
+# 함수 호출
+load_r_functions_from_path(path_packages)
+
+
+
+
+
 
 
 
@@ -268,247 +291,28 @@ find_duplicates <- function(list) {
   }
 }
 
-
-
-
-
-
-# 🟥 Data Load #####################################################################################################
-path_id = "/Users/Ido/Library/CloudStorage/GoogleDrive-clair.de.lune.404@gmail.com/My Drive/DataAnalysis/KFS_Timeseries/rearranged data/4.L3 Re-Categorized data.csv"
-id = read.csv(path_id)
-# id %>% View
-
-path_data = "/Users/Ido/Library/CloudStorage/GoogleDrive-clair.de.lune.404@gmail.com/My Drive/DataAnalysis/KFS_Timeseries/Data/DB_20240415/TB_NDI_MRV_STTST_YRBK_OF_FRSTR_DATA_20240415.xlsx"
-data = read.xlsx(path_data)
-
-
-path_header = "/Users/Ido/Library/CloudStorage/GoogleDrive-clair.de.lune.404@gmail.com/My Drive/DataAnalysis/KFS_Timeseries/Data/DB_20240415/TB_NDI_MRV_STTST_YRBK_OF_FRSTR_HDR_20240415.xlsx"
-header = read.xlsx(path_header)
-
-
-
-# 🟥 id L3 확인 #####################################################################################################
-id$Categorized_L3 %>% table %>% names
-
-
-
-
-
-
-# 🟥 raw 데이터 정리(리스트화) #####################################################################################################
-## 🟧 데이터 체크 #####################################################################################################
-id %>% filter(연보.ID =="YRBK_0049040802")
-header %>% filter(연보.ID =="YRBK_0049040802")
-data %>% filter(연보.ID =="YRBK_0049040802") %>% View
-# test %>% filter(연보.ID == "YRBK_0049040802")
-
-
-
-## 🟧 연보ID에 따라 데이터 리스트화 #####################################################################################################
-# # split 함수를 사용하여 "연보.ID"로 그룹화
-# grouped_data <- split(data, data$연보.ID)
-# 
-# # 각 "연보.ID"를 리스트의 이름으로 설정
-# result_list <- lapply(names(grouped_data), function(id) {
-#   return(grouped_data[[id]])
-# })
-# names(result_list) <- names(grouped_data)
-# 
-# length(result_list) == data$연보.ID %>% unique %>% length
-
+## 🟧 L3 추출 함수 정의 ==================================================================
+extract_L3_values <- function(data, include_keywords, exclude_keywords = NULL) {
+  # L2 열에서 포함할 키워드를 포함한 고유한 원소 추출
+  matched_L2_values <- unique(data$L2[grep(paste(include_keywords, collapse = "|"), data$L2)])
   
-## 🟧 임시 save #####################################################################################################
-path_save = "/Users/Ido/Library/CloudStorage/GoogleDrive-clair.de.lune.404@gmail.com/My Drive/DataAnalysis/KFS_Timeseries/rearranged data"
-# saveRDS(result_list, paste0(path_save, "/5.Raw Data as a list.rds"))
-data.list = readRDS(list.files(path_save, pattern = "Raw Data as", full.names=T)) 
-
-
-
-
-
-
-
-
-# 🟥 header 추가 #####################################################################################################
-## 🟧 함수 정의 ===========================================================================================
-# 모든 행의 원소가 NA인 열을 제거하는 함수 정의
-remove_na_columns <- function(df) {
-  df_clean <- df[, colSums(is.na(df)) < nrow(df)]
-  return(df_clean)
-}
-# 헤더 행 합치기 함수
-combine_columns <- function(df) {
-  # 필요한 패키지 로드
-  if(!require(dplyr)) install.packages("dplyr", dependencies=TRUE)
-  library(dplyr)
-  
-  # 첫 번째, 두 번째 열 제외한 나머지 열을 결합
-  df %>%
-    group_by(연보.ID, 행) %>%
-    summarise(across(starts_with("열"), ~ paste(.[1], .[2], sep = "_")), .groups = 'drop')
-}
-# 열이 존재하는지 확인하는 함수
-remove_column_if_exists <- function(data, column_name) {
-  if (column_name %in% colnames(data)) {
-    data <- data %>% dplyr::select(-all_of(column_name))
-  }
-  return(data)
-}
-
-
-
-
-## 🟧 각 ID에 대해 합치기 ===========================================================================================
-# Extract ID
-yb_id = id %>% 
-  filter(!is.na(Categorized_L3)) %>% 
-  pull(연보.ID) %>% 
-  unique
-
-# 확인용
-check_id = c()
-
-# 결과 저장용
-combined.list = list()
-
-# Add header
-for(i in seq_along(yb_id)){
-  ### 🟩 extract ID =================================================================
-  ith_id = yb_id[i]
-  # ith_id = "YRBK_00010302"
-  # ith_id = "YRBK_0049040802"
-  # ith_id =  "YRBK_00010801"
-  
-  ### 🟩 hdr =================================================================
-  ith_hdr <- header %>% 
-    filter(연보.ID == ith_id) %>% 
-    remove_na_columns() %>% 
-    remove_column_if_exists("언어.코드")
-  # '헤더행' 열이 존재하면 이름을 변경
-  if ("헤더행" %in% colnames(ith_hdr)) {
-    ith_hdr <- ith_hdr %>% 
-      rename(행 = 헤더행) %>% 
-      combine_columns()
+  # 제외할 키워드가 주어지면 해당 키워드를 포함하는 원소 제거
+  if (!is.null(exclude_keywords)) {
+    exclude_pattern <- paste(exclude_keywords, collapse = "|")
+    matched_L2_values <- matched_L2_values[!grepl(exclude_pattern, matched_L2_values)]
   }
   
-  # "연보.ID"와 "행" 열 제외
-  ith_hdr_sub <- ith_hdr[, !(names(ith_hdr) %in% c("연보.ID", "행"))]
+  # 추출된 L2 값을 갖는 행들의 L3 값 추출
+  matched_L3_values <- unique(data$L3[data$L2 %in% matched_L2_values])
   
-  # "NA_NA" 값 제외하고 문자열 합치기
-  combined <- apply(ith_hdr_sub, 2, function(col) {
-    paste(col[col != "NA_NA"], collapse = "_")
-  }) %>% unname
-  
-  # combined 값을 데이터 프레임 형식으로 변환
-  combined_df <- as.data.frame(t(combined), stringsAsFactors = FALSE)
-  colnames(combined_df) <- names(ith_hdr_sub)
-  
-  # 원본 데이터 프레임에 반영
-  ith_hdr = ith_hdr[1,]
-  ith_hdr[1, !(names(ith_hdr) %in% c("연보.ID", "행"))] <- combined_df
-  
-  
-  
-  ### 🟩 data =================================================================
-  ith_data = data.list[names(data.list)==ith_id]
-  
-  if(length(ith_data)!=0 && class(ith_data) == "list"){
-    ith_data = data.list[names(data.list)==ith_id][[1]] %>% 
-      remove_na_columns() %>% 
-      rename(행 := 데이터행) %>% 
-      arrange(행)
-    
-    
-    # 열 이름 얻기
-    all_columns <- union(names(ith_hdr), names(ith_data))
-    
-    # 존재하지 않는 열을 추가
-    for (col in all_columns) {
-      if (!col %in% names(ith_hdr)) {
-        ith_hdr[[col]] <- NA
-      }
-      if (!col %in% names(ith_data)) {
-        ith_data[[col]] <- NA
-      }
-    }
-    
-    # 열 이름 정렬
-    ith_hdr <- ith_hdr %>% select(all_of(all_columns))
-    ith_data <- ith_data %>% select(all_of(all_columns))
-    
-    # 데이터프레임 합치기
-    combined_df <- rbind(ith_hdr, ith_data)
-    
-    # 첫 두 열은 그대로 두고, 나머지 열을 알파벳 순서로 정렬
-    sorted_columns <- c(names(combined_df)[1:2], sort(names(combined_df)[-c(1, 2)]))
-    
-    # 정렬된 열 순서로 데이터프레임 재구성
-    sorted_combined_df <- combined_df %>% select(all_of(sorted_columns))
-    
-    
-    # 첫 번째 행을 열 이름으로 설정
-    new_colnames <- as.character(sorted_combined_df[1, ])
-    colnames(sorted_combined_df) <- new_colnames
-    
-    # 첫 번째 행 제거
-    sorted_combined_df <- sorted_combined_df[-1, ]
-    names(sorted_combined_df)[1:2] = c("연보.ID", "행")
-    
-    # 결과 저장
-    combined.list[[i]] = sorted_combined_df
-    
-    cat("\n", crayon::green(i), crayon::red(ith_id), crayon::green("is done!"),"\n")
-  }else{
-    
-    check_id = c(check_id, ith_id)
-    
-  }
-  
-
+  return(matched_L3_values)
 }
 
 
-## 🟧 연보.ID를 리스트의 이름으로 설정 ===========================================================================================
-names(combined.list) <- sapply(combined.list, function(df) df$연보.ID[1])
-combined.list$YRBK_00010201
-combined.list$YRBK_00010302
-combined.list$YRBK_00010312
-combined.list$YRBK_00020309
 
 
 
 
-
-## 🟧 연보.ID이름에 L3 그룹 이름 추가 ===========================================================================================
-# 새로운 이름 생성 함수
-new_names <- sapply(names(combined.list), function(연보.ID) {
-  L3_category <- id %>%
-    filter(연보.ID == !!연보.ID) %>%
-    select(Categorized_L3) %>%
-    unique() %>%
-    pull(Categorized_L3) %>%
-    str_extract("^[^_]+")
-  
-  
-  combined_names <- id %>%
-    filter(연보.ID == !!연보.ID) %>%
-    pull(combined_names)
-  
-  # 새로운 이름 생성
-  paste0(연보.ID, "___", L3_category, "______", combined_names)
-}) %>% unname
-
-
-head(new_names)
-names(combined.list) <- new_names
-
-
-
-
-
-## 🟧 결과 저장 ===========================================================================================
-path_save = "/Users/Ido/Library/CloudStorage/GoogleDrive-clair.de.lune.404@gmail.com/My Drive/DataAnalysis/KFS_Timeseries/rearranged data"
-saveRDS(combined.list, paste0(path_save, "/5.Combined hdr data.rds"))
 
 
 
