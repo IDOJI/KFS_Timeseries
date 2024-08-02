@@ -50,6 +50,7 @@
 #   file.rename(file.path(dir_path, file_name), file.path(dir_path, new_file_name))
 # }
 
+path_2000 = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID/@_조림/(@부분완료)수종별 조림실적Plantation forest by tree species/2000_YRBK_0030030501.xlsx"
 
 
 # area
