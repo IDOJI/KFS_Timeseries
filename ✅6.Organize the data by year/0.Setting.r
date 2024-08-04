@@ -1,4 +1,3 @@
-library(ggplot2)
 
 plot_time_series_ggplot <- function(time_series) {
   # 입력 데이터의 유효성 검사
