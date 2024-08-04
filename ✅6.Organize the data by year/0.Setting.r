@@ -1,3 +1,185 @@
+library(dplyr)
+
+# 두 열을 합치는 함수 정의
+merge_columns <- function(df, col1, col2, new_col_name) {
+  df <- df %>%
+    mutate(
+      !!new_col_name := case_when(
+        is.na(!!sym(col1)) & !is.na(!!sym(col2)) ~ !!sym(col2),
+        !is.na(!!sym(col1)) & is.na(!!sym(col2)) ~ !!sym(col1),
+        is.na(!!sym(col1)) & is.na(!!sym(col2)) ~ NA,
+        !!sym(col1) == !!sym(col2) ~ !!sym(col1),
+        TRUE ~ stop(paste("Error: Values in columns", col1, "and", col2, "are different and both are non-NA"))
+      )
+    )
+  return(df)
+}
+
+
+compare_columns <- function(df_list, start_col, end_col) {
+  # 각 데이터프레임의 열 이름을 저장할 리스트 초기화
+  column_names_list <- list()
+  
+  # 데이터프레임 리스트에서 각 데이터프레임에 대해 열 이름 추출
+  for (df in df_list) {
+    column_names <- colnames(df)[start_col:end_col]
+    column_names_list <- append(column_names_list, list(column_names))
+  }
+  
+  # 첫 번째 데이터프레임의 열 이름을 기준으로 동일성 판단
+  reference <- column_names_list[[1]]
+  identical_columns <- sapply(column_names_list, function(cols) identical(cols, reference))
+  
+  # 결과 메시지 출력 및 차이점 표시
+  for (i in seq_along(identical_columns)) {
+    if (identical_columns[i]) {
+      message(sprintf("데이터프레임 %d: 지정된 열 이름이 동일합니다.", i))
+    } else {
+      message(sprintf("데이터프레임 %d: 지정된 열 이름이 다릅니다.", i))
+      message(sprintf(" - 기준 열 이름: %s", paste(reference, collapse = ", ")))
+      message(sprintf(" - 현재 열 이름: %s", paste(column_names_list[[i]], collapse = ", ")))
+      
+      # 다른 부분 강조 표시
+      for (j in seq_along(reference)) {
+        if (j > length(column_names_list[[i]]) || reference[j] != column_names_list[[i]][j]) {
+          message(sprintf("   차이점: 기준 %s <-> 현재 %s", 
+                          reference[j], 
+                          if (j > length(column_names_list[[i]])) "없음" else column_names_list[[i]][j]))
+        }
+      }
+    }
+  }
+  
+  # 동일성 여부 반환
+  return(identical_columns)
+}
+
+
+remove_na_columns <- function(df) {
+  # "구분"이라는 열의 인덱스를 찾음
+  indices <- which(names(df) == "구분")
+  
+  # 인덱스를 기반으로 열을 검사하고, 모두 NA인 경우 제거
+  for (index in indices) {
+    # index = 12
+    if (all(is.na(df[[index]]))) {
+      df[[index]] <- NULL
+    }
+  }
+  # names(df)
+  return(df)
+}
+
+# 함수 정의
+rename_columns <- function(data_list) {
+  # 각 데이터프레임에서 열 이름 변경
+  modified_list <- lapply(data_list, function(df) {
+    if (ncol(df) >= 4) {  # 데이터프레임에 열이 4개 이상 있는지 확인
+      names(df)[3] <- "구분"
+      names(df)[4] <- "합계_면적"
+    } else {
+      message("데이터프레임에 충분한 열이 없습니다.")
+    }
+    return(df)
+  })
+  
+  return(modified_list)
+}
+
+# 사용 예시
+# renamed_data_list <- rename_columns(broadleaf_data_by_year)
+# 확인하기 위해 첫 번째 데이터프레임의 열 이름을 출력
+# print(names(renamed_data_list[[1]]))
+
+compare_column_names <- function(data_list, end_column_index) {
+  # 각 데이터프레임에서 3번째 열부터 지정된 끝 열까지의 열 이름을 추출
+  column_names_list <- lapply(data_list, function(df) {
+    if (ncol(df) >= end_column_index) {
+      names(df)[3:end_column_index]
+    } else {
+      NA  # 데이터프레임에 열이 부족한 경우 NA 반환
+    }
+  })
+  
+  # 열 이름 목록 확인
+  print(column_names_list)
+  
+  # 모든 열 이름이 동일한지 확인
+  # 먼저 NA가 아닌 열 이름만 선택
+  valid_column_names_list <- column_names_list[!is.na(column_names_list)]
+  
+  # 모든 요소가 동일한지 비교
+  all_equal <- all(sapply(valid_column_names_list, function(x) identical(x, valid_column_names_list[[1]])))
+  
+  if (all_equal) {
+    cat("모든 데이터프레임의 3번째 열부터", end_column_index, "번째 열까지의 열 이름이 동일합니다.\n")
+  } else {
+    cat("각 데이터프레임의 3번째 열부터", end_column_index, "번째 열까지의 열 이름이 동일하지 않습니다.\n")
+    
+    # 동일하지 않은 경우, 어떤 차이가 있는지 확인
+    for (i in 1:length(valid_column_names_list)) {
+      if (!identical(valid_column_names_list[[i]], valid_column_names_list[[1]])) {
+        cat("데이터프레임", i, "의 열 이름이 다릅니다:\n")
+        print(valid_column_names_list[[i]])
+      }
+    }
+  }
+}
+
+# 사용 예시
+# compare_column_names(broadleaf_data_by_year, 19)
+
+# 사용 예시
+# compare_column_names(broadleaf_data_by_year, 19)
+
+combine_columns <- function(df, col1, col2, new_col_name, after_col) {
+  # 임시로 기존 열 이름 변경
+  temp_col1 <- paste0(col1, "_temp")
+  temp_col2 <- paste0(col2, "_temp")
+  
+  # 기존 열 이름 변경
+  names(df)[names(df) == col1] <- temp_col1
+  names(df)[names(df) == col2] <- temp_col2
+  
+  # 새로 추가할 열 계산
+  new_column <- mapply(function(v1, v2) {
+    if (is.na(v1) && is.na(v2)) {
+      return(NA)
+    } else if (is.na(v1)) {
+      return(v2)
+    } else if (is.na(v2)) {
+      return(v1)
+    } else {
+      stop(paste("Error: Both columns", col1, "and", col2, "have non-NA values."))
+    }
+  }, df[[temp_col1]], df[[temp_col2]])
+  
+  # 새로운 열 추가 (임시로 마지막에 추가)
+  df[[new_col_name]] <- new_column
+  
+  # 기존 열 제거
+  df <- df[, !(names(df) %in% c(temp_col1, temp_col2))]
+  
+  # 열 이름 목록
+  col_names <- names(df)
+  
+  # after_col의 위치 찾기
+  after_index <- which(col_names == after_col)
+  if (length(after_index) == 0) {
+    stop(paste("Error: Column", after_col, "not found in the data frame."))
+  }
+  
+  # 열 순서 재배치
+  col_order <- c(col_names[1:after_index], new_col_name, col_names[(after_index + 1):(ncol(df) - 1)])
+  
+  # 새 열을 지정된 위치로 이동
+  df <- df[, col_order]
+  
+  return(df)
+}
+
+
+
 check_continuous_years <- function(years) {
   # years 벡터의 최소와 최대 값을 구합니다.
   min_year <- min(years, na.rm = TRUE)
