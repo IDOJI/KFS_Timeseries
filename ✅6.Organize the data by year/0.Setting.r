@@ -1,3 +1,97 @@
+library(ggplot2)
+
+plot_time_series_ggplot <- function(time_series) {
+  # 입력 데이터의 유효성 검사
+  if (!is.numeric(time_series)) {
+    stop("Input must be a numeric vector")
+  }
+  
+  # 데이터 프레임 생성
+  data_frame <- data.frame(Time = seq_along(time_series), Value = time_series)
+  
+  # ggplot을 사용한 시계열 플롯 생성
+  p <- ggplot(data_frame, aes(x = Time, y = Value)) +
+    geom_line(color = "blue", size = 1) +  # 선 그래프 추가
+    geom_point(color = "red", size = 2) +  # 포인트 추가
+    labs(title = "Time Series Plot", x = "Time", y = "Value") +
+    theme_minimal() +  # 미니멀 테마 사용
+    theme(plot.title = element_text(hjust = 0.5))  # 제목 가운데 정렬
+  
+  # 그래프 출력
+  print(p)
+}
+
+add_prefix_to_columns <- function(df, target_string, prefix) {
+  # 열 이름을 가져오기
+  column_names <- colnames(df)
+  
+  # target_string을 포함하는 열 이름 인덱스 찾기
+  target_indices <- grep(target_string, column_names)
+  
+  # 해당 열 이름들 앞에 prefix 추가
+  new_column_names <- column_names
+  new_column_names[target_indices] <- paste0(prefix, column_names[target_indices])
+  
+  # 데이터프레임의 열 이름을 업데이트
+  colnames(df) <- new_column_names
+  
+  return(df)
+}
+
+
+
+rename_column_in_list_korean_pine <- function(conifer_list) {
+  renamed_list <- lapply(conifer_list, function(df) {
+    # 열 이름이 "짓나무_면적"인 경우 "잣나무_면적"으로 변경
+    colnames(df) <- gsub("^짓나무_면적$", "잣나무_면적", colnames(df))
+    return(df)
+  })
+  return(renamed_list)
+}
+
+
+
+
+get_unique_column_names <- function(conifer_list, col_position) {
+  unique_names <- sapply(conifer_list, function(x) {
+    if(col_position <= ncol(x)) {
+      return(names(x)[col_position])
+    } else {
+      return(NA)
+    }
+  }) %>% unique
+  return(unique_names[!is.na(unique_names)])
+}
+
+rearrange_columns <- function(df) {
+  # 열 이름 가져오기
+  column_names <- colnames(df)
+  
+  # "삼나무_"로 시작하는 열과 "리기다_"로 시작하는 열의 인덱스 구하기
+  samnamu_indices <- grep("^삼나무_", column_names)
+  rigida_indices <- grep("^리기다_", column_names)
+  
+  if (length(samnamu_indices) == 0 || length(rigida_indices) == 0) {
+    # "삼나무_" 또는 "리기다_"로 시작하는 열이 없으면 데이터프레임 반환
+    return(df)
+  }
+  
+  # "리기다_"로 시작하는 마지막 열 인덱스 구하기
+  last_rigida_index <- max(rigida_indices)
+  
+  # 새로운 열 순서 생성
+  new_order <- c(
+    setdiff(seq_len(last_rigida_index), samnamu_indices),
+    samnamu_indices,
+    setdiff((last_rigida_index + 1):ncol(df), samnamu_indices)
+  )
+  
+  # 열 순서 재정렬
+  rearranged_df <- df[, new_order]
+  
+  return(rearranged_df)
+}
+
 library(dplyr)
 
 # 두 열을 합치는 함수 정의
