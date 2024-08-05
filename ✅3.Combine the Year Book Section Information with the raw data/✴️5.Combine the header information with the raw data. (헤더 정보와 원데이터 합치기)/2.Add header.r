@@ -1,18 +1,18 @@
 # 🟥 데이터 로드 ==================================================================================================
 ### 🟧 Data load  ===========================================================================================
-path_save = "/Users/Ido/Documents/DataAnalysis/KFS_Timeseries/3.Data with HDR"
+path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/3.Data with HDR"
 # raw data
-path_raw_data = "/Users/Ido/Documents/DataAnalysis/KFS_Timeseries/3.Data with HDR/1.Raw Data as a list.rds"
+path_raw_data = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/3.Data with HDR/1.Raw Data as a list.rds"
 data = readRDS(path_raw_data) 
 
 # yb id 
-path_yb = "/Users/Ido/Documents/DataAnalysis/KFS_Timeseries/2.Rearrange YB names/4.Added YB ID.csv"
+path_yb = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/2.Rearrange YB names/4.Added YB ID.csv"
 yb = read.csv(path_yb)
   
 # yb$Categorized_L3_New %>% unique %>% sort
 
 # header
-path_header = "/Users/Ido/Documents/DataAnalysis/KFS_Timeseries/0.Raw Data/DB_20240415/TB_NDI_MRV_STTST_YRBK_OF_FRSTR_HDR_20240415.xlsx"
+path_header = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/0.Raw Data/DB_20240415/TB_NDI_MRV_STTST_YRBK_OF_FRSTR_HDR_20240415.xlsx"
 header = read_xlsx(path_header) %>% rename("ID" = `연보 ID`) %>% suppressWarnings()
 
 # data[names(data) == ith_id][[1]] %>% View
@@ -78,6 +78,8 @@ for(i in 1:length(yb_id)){
   # i= 2989
   ### 🟩 extract ID =================================================================
   ith_id = yb_id[i]
+  # ith_id = ID
+  # ith_id = "YRBK_00200316"
   # ith_id = error_id
   # ith_id = "YRBK_00060209"
   # ith_id = "YRBK_00510714"
@@ -133,6 +135,7 @@ for(i in 1:length(yb_id)){
         cat("\n", crayon::red("Error occurred, continuing the loop:\n"), conditionMessage(e), "\n")
         NULL  # 에러가 발생한 경우 NULL 반환
       })
+      
       # View(ith_data_combined)
       # names(ith_data_combined)
       # yb %>% filter(ID == ith_id) %>% View

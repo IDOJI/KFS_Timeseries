@@ -1,3 +1,60 @@
+library(dplyr)
+
+# 함수 정의: 3번째 열에서 중복된 값이 있는 경우 year 열에서 가장 큰 값을 남기기
+filter_unique_by_recent_year <- function(df) {
+  if (ncol(df) >= 3 && "year" %in% colnames(df)) {
+    df %>%
+      group_by_at(3) %>%   # 3번째 열을 기준으로 그룹화
+      filter(year == max(year)) %>%  # 각 그룹에서 year 열의 최대값 필터링
+      ungroup() %>%   # 그룹 해제
+      distinct_at(3, .keep_all = TRUE)  # 3번째 열에서 중복을 제거
+  } else {
+    warning("The dataframe does not have at least 3 columns or 'year' column.")
+    return(df)
+  }
+}
+
+
+
+# 함수 정의: 3번째 열에서 4자리 연도가 포함된 행만 남기기
+filter_by_year <- function(df) {
+  if (ncol(df) >= 3) {
+    df %>%
+      filter(str_detect(df[[3]], "\\b\\d{4}\\b"))
+  } else {
+    warning("The dataframe does not have at least 3 columns.")
+    return(df)
+  }
+}
+
+
+get_data_by_name <- function(list_data, element_name) {
+  # 리스트에서 해당 이름의 원소를 반환
+  result <- list_data[names(list_data) == element_name][[1]]
+  return(result)
+}
+
+
+# 특정 열 개수의 데이터 프레임을 추출하는 함수
+extract_dfs_by_col_count <- function(data_list, target_col_count) {
+  # 데이터 프레임 리스트에서 특정 열 개수를 가진 데이터 프레임만 추출
+  filtered_list <- lapply(data_list, function(df) {
+    if (ncol(df) == target_col_count) {
+      return(df)
+    } else {
+      return(NULL)
+    }
+  })
+  
+  # NULL 요소 제거
+  filtered_list <- filtered_list[!sapply(filtered_list, is.null)]
+  
+  return(filtered_list)
+}
+
+
+
+
 
 plot_time_series_ggplot <- function(time_series) {
   # 입력 데이터의 유효성 검사

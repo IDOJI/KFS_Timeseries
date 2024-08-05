@@ -487,6 +487,31 @@ remove_na_rows <- function(df) {
 }
 
 
+library(dplyr)
+
+remove_first_row_if_conditions_met <- function(df) {
+  if ("행" %in% colnames(df)) {
+    # "행" 열을 numeric으로 변환
+    df <- df %>%
+      mutate(행 = as.numeric(행))
+    
+    # 첫 번째 행의 "행" 열 값이 0인지 확인
+    if (df$행[1] == 0) {
+      # 첫 번째 행의 3번째 열부터 마지막 열까지의 값 확인
+      first_row_values <- df[1, 3:ncol(df)]
+      
+      # 모든 값이 숫자가 포함되지 않은 문자열인지 확인
+      is_non_numeric <- sapply(first_row_values, function(x) !grepl("\\d", x))
+      
+      if (all(is_non_numeric)) {
+        # 조건이 충족되면 첫 번째 행을 제거
+        df <- df[-1, ]
+      }
+    }
+  }
+  
+  return(df)
+}
 
 
 # 🟥 ith_data 함수 #####################################################################################################
@@ -520,6 +545,7 @@ treat_data = function(ith_data, ith_hdr, yb){
     remove_na_prefix_from_third_column %>%  # 3번째 열의 원소에서 NA_ 문자열 제거
     add_chk_suffix %>%   # 행정구역 이름이 여러 개 있는 경우
     # remove_na_columns() %>%  # 마지막 열의 NA 열 지우기
+    remove_first_row_if_conditions_met %>%  # 첫번째 열이 문자열이면 삭제
     remove_commas_from_columns(start_col = 3) %>%  # 숫자에서 "," 지우기 
     remove_last_row_if_total_or_na %>%   # 마지막 행이 "계"이면 지우기
     convert_to_numeric_2 %>%  # 수치형으로 열들 바꾸기
@@ -707,7 +733,6 @@ treat_data = function(ith_data, ith_hdr, yb){
     # combine_third_and_last_columns %>%  # 마지막 열이 문자열이면 합치고 제거
     remove_cdot # 열이름에서 cdot 제거
   # View(ith_data_3)
-  
   
   
   return(ith_data_3)
