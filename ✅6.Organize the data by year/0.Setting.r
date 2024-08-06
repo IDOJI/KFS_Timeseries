@@ -1,3 +1,4 @@
+# rm(list=ls())
 library(dplyr)
 
 # 함수 정의: 3번째 열에서 중복된 값이 있는 경우 year 열에서 가장 큰 값을 남기기

@@ -78,6 +78,7 @@ for(i in 1:length(yb_id)){
   # i= 2989
   ### 🟩 extract ID =================================================================
   ith_id = yb_id[i]
+  # ith_id = error_id
   # ith_id = ID
   # ith_id = "YRBK_00200316"
   # ith_id = error_id
@@ -196,8 +197,6 @@ for(i in 1:length(yb_id)){
   }
   
 }
-
-
 
 
 
@@ -414,7 +413,7 @@ for(k in seq_along(combined_data.list)){
 
 ## 🟧 Export ===========================================================================================
 combined_data.list$YRBK_001202030101 %>% View
-path_save = "/Users/Ido/Documents/DataAnalysis/KFS_Timeseries/3.Data with HDR"
+path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/3.Data with HDR"
 saveRDS(combined_data.list, paste0(path_save, "/8.2.Combined Data.rds"))
 # combined_data.list = readRDS(paste0(path_save, "/8.2.Combined Data.rds"))
 

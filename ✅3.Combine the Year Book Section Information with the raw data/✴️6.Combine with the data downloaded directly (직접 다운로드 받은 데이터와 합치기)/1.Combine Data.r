@@ -1,9 +1,9 @@
 # 🟥 Load data ###########################################################################################
-path_save = "/Users/Ido/Documents/DataAnalysis/KFS_Timeseries/3.Data with HDR"
-combined_data = readRDS("/Users/Ido/Documents/DataAnalysis/KFS_Timeseries/3.Data with HDR/8.2.Combined Data.rds")
+path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/3.Data with HDR"
+combined_data = readRDS("/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/3.Data with HDR/8.2.Combined Data.rds")
 
 
-yb = read.csv("/Users/Ido/Documents/DataAnalysis/KFS_Timeseries/2.Rearrange YB names/4.Added YB ID.csv")
+yb = read.csv("/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/2.Rearrange YB names/4.Added YB ID.csv")
 "YRBK_00520609" %in% names(combined_data)
 
 
@@ -83,7 +83,7 @@ id = "YRBK_0047060403"
 id %in% names(combined_data)
 
 # 데이터 수정
-downloaded_data = read.csv("/Users/Ido/Documents/DataAnalysis/KFS_Timeseries/3.Data with HDR/Directly Downloaded Data/completed_cutting/YRBK_0047060403_after.csv")
+downloaded_data = read.csv("/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/3.Data with HDR/Directly Downloaded Data/completed_cutting/YRBK_0047060403_after.csv")
 downloaded_data$ID = id
 downloaded_data_2 = downloaded_data[-nrow(downloaded_data), ]
 downloaded_data_2 %>% dim
@@ -125,7 +125,7 @@ merged_data.list[[1]] %>% View
  
  
 # 🟥 데이터 내보내기 ####################################################################################################
-path_save = "/Users/Ido/Documents/DataAnalysis/KFS_Timeseries/3.Data with HDR"
+path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/3.Data with HDR"
 saveRDS(combined_data_new, paste0(path_save, "/8.3.Combined Data.rds"))
 
 combined_data_new[names(combined_data_new) == "YRBK_00010301"][[1]] %>% View

@@ -321,6 +321,17 @@ file_name = "산림병해충 발생 ᄆ�
 saveRDS(combined.list, file.path(path_save, file_name))
 
 
+path_file = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID/@_산림피해/(@재선충완료)산림병해충 발생 및 방제상황5 Forest Damage Occurrence and Prevention by Forest Pest Insect and Disease/산림병해충 발생 및 방제상황_소나무재선충.rds"
+combined.list = readRDS(path_file)
+
+path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID/@_산림피해/(@재선충완료)산림병해충 발생 및 방제상황5 Forest Damage Occurrence and Prevention by Forest Pest Insect and Disease"
+file_name = "산림병해충 발생 및 방제상황_소나무재선충_면적.xlsx"
+write.xlsx(combined.list$Area, file.path(path_save, file_name))
+
+
+path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID/@_산림피해/(@재선충완료)산림병해충 발생 및 방제상황5 Forest Damage Occurrence and Prevention by Forest Pest Insect and Disease"
+file_name = "산림병해충 발생 및 방제상황_소나무재선충_그루수.xlsx"
+write.xlsx(combined.list$Seedling, file.path(path_save, file_name))
 
 
 
