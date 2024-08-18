@@ -1,11 +1,11 @@
 # 🟥 data load ====================================================================================
-path_data = "/Users/Ido/Documents/DataAnalysis/KFS_Timeseries/3.Data with HDR/8.3.Combined Data.rds"
+path_data = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/3.Data with HDR/8.3.Combined Data.rds"
 data = readRDS(path_data)
 
 
 
 # 🟥 Export data ====================================================================================
-path_save = "/Users/Ido/Documents/DataAnalysis/KFS_Timeseries/4.Exported Data_by ID"
+path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2"
 
 # i = next_id(data, "YRBK_0047060402")
 

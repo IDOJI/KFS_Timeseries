@@ -1,3 +1,35 @@
+
+
+
+# 특정 문자열이 포함되지 않은 행들을 추출하는 함수
+exclude_by_string <- function(data, column_index, search_string) {
+  # data: 데이터프레임
+  # column_index: 탐색할 열의 인덱스 (여기서는 3번째 열)
+  # search_string: 제외하고자 하는 특정 문자열
+  
+  # grepl의 결과를 반전시켜 해당 문자열이 포함되지 않은 행을 필터링
+  filtered_rows <- data[!grepl(search_string, data[[column_index]]), ]
+  
+  # 필터링된 데이터프레임 반환
+  return(filtered_rows)
+}
+
+
+
+
+# 특정 문자열이 포함된 행들을 추출하는 함수
+filter_by_string <- function(data, column_index, search_string) {
+  # data: 데이터프레임
+  # column_index: 탐색할 열의 인덱스 (여기서는 3번째 열이 되겠죠)
+  # search_string: 찾고자 하는 특정 문자열
+  
+  # grepl을 사용하여 search_string을 포함하는 행을 필터링
+  filtered_rows <- data[grepl(search_string, data[[column_index]]), ]
+  
+  # 필터링된 데이터프레임 반환
+  return(filtered_rows)
+}
+
 # rm(list=ls())
 extract_summed_results = function(data.list){
   # 각 데이터프레임에 대해 계산을 수행하고 결과를 저장할 리스트 초기화

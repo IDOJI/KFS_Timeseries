@@ -3,209 +3,547 @@ library(readr)
 library(dplyr)
 
 # 데이터가 저장된 경로
-data_path <- "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID/@_조림/(@완료)수종별 조림실적Plantation forest by tree species/@완료/4.2004~2022 침엽수, 활엽수 데이터합치기"
+data_path <- "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/조림/수종별 조림실적Plantation forest by tree species/5.04~23_활엽수, 침엽수"
 
 # 파일 목록 가져오기
-files <- list.files(data_path, pattern = "\\.csv$", full.names = TRUE)
-print(files)
+path_files <- list.files(data_path, pattern = "\\.csv$", full.names = TRUE)
 
-# 침엽수와 활엽수 데이터를 저장할 리스트 생성
-conifer_list <- list()
-broadleaf_list <- list()
+data.list = lapply(path_files, read.csv) %>% setNames(basename(path_files))
 
-# 파일을 읽고 데이터 분류 및 전처리
-for (m in seq_along(files)){
-  # m=25
-  file = files[m]
+
+
+
+# 🟥 연도행만 가져오기 ======================================================================================
+# 패턴을 포함하는 행 추출 함수
+extract_rows <- function(df) {
+  # 세 번째 열에 4자리 숫자가 포함된 행 추출
+  df[grep("\\d{4}", df[[3]]), ]
+}
+
+# 각 데이터프레임에서 행을 추출하여 새로운 리스트에 저장
+filtered_data.list <- lapply(data.list, extract_rows)
+
+# 결과 출력
+filtered_data.list[[1]] %>% View
+
+
+
+# 🟨 3번째 열의 이름 확인 및 통일 ======================================================================================
+sapply(filtered_data.list, function(x){
+  names(x)[3]
+}) %>% unique
+for(k in seq_along(filtered_data.list)){
   
-  # 파일 이름에서 연도 추출
-  year <- substr(basename(file), 1, 4)
+  names(filtered_data.list[[k]])[3] = "구분"
   
-  # CSV 파일 읽기
-  df <- read.csv(file)
+}
+
+
+
+
+# 🟨 침엽수 활엽수 나누기 ======================================================================================
+conifer.list <- list()
+broadleaf.list <- list()
+
+for(kth_data in filtered_data.list){
   
-  # 3번째 열에서 연도가 포함된 행만 남기기
-  df <- df %>% filter(grepl("\\d{4}", .[[3]]))
-  
-  # "그루수" 또는 "본수"가 포함된 열 제외
-  df <- df %>% select(-contains("그루수"), -contains("본수"), -contains("sdls"))
-  
-  # 열 이름에서 "Area_" 문자열 제거
-  names(df) <- gsub("Area_", "", names(df))
-  names(df) <- gsub("_Area", "", names(df))
-  names(df) <- gsub("Total_", "", names(df))
-  
-  # "면적_" 문자열이 포함된 열 이름을 "소나무_면적" 등으로 변경
-  names(df) <- sapply(names(df), function(x) {
-    if (grepl("면적_", x)) {
-      sub("면적_", "", x) %>% paste0("_면적")
-    } else {
-      x
-    }
-  })
-  
-  # 중복된 열 이름 수정
-  names(df) <- make.unique(names(df)) 
-  
-  # 특정 열 이름 변경
-  names(df)[3] <- "구분"
-  names(df)[4] <- "계_면적"
-  
-  # '침엽수'와 '활엽수'로 데이터 분류
-  df= remove_na_columns(df)
-  df_conifer <- df %>% dplyr::filter(grepl("침엽수", NAME_L4))
-  df_broadleaf <- df %>% dplyr::filter(grepl("활엽수", NAME_L4))
-  
-  # 각각의 리스트에 저장
-  if(nrow(df_conifer) > 0){
-    conifer_list[[year]] <- df_conifer  
-  } else if(nrow(df_broadleaf) > 0){
-    broadleaf_list[[year]] <- df_broadleaf  
+  if(grepl("침엽수", kth_data$NAME_L4[1])){
+    conifer.list <- append(conifer.list, list(kth_data))
+    
+  } else if(grepl("활엽수", kth_data$NAME_L4[1])){
+    broadleaf.list <- append(broadleaf.list, list(kth_data))
   }
 }
 
+# 결과 출력
+conifer.list[[1]] %>% View
+broadleaf.list
 
 
 
+# 🟨 침엽수, 활엽수 문자열 붙이기 =====================================================================================
+# conifer.list에 있는 각 데이터프레임의 열 이름 수정
+for (i in seq_along(conifer.list)) {
+  # 현재 데이터프레임
+  df <- conifer.list[[i]]
+  
+  # 열 이름 찾기
+  col_names <- colnames(df)
+  start_index <- 4
+  end_index <- which(col_names == "Categorized_L3_New") - 1
+  
+  # 열 이름 수정
+  if (length(start_index:end_index) > 0) {
+    colnames(df)[start_index:end_index] <- paste0("침엽수_", col_names[start_index:end_index])
+  }
+  
+  # 수정된 데이터프레임을 다시 리스트에 저장
+  conifer.list[[i]] <- df
+}
 
-# 🟥 열 체크 ======================================================================================
-## 🟩 열 개수 체크 ==============================================================
-sapply(conifer_list, ncol) %>% unique
-sapply(broadleaf_list, ncol) %>% unique
+# 결과 출력
+conifer.list[[1]] %>% names
 
 
-
-
-
-
-## 🟩 열이름 체크 ==============================================================
-### 🟨 침엽수 ===================================================================
-sapply(conifer_list, names) %>% View
-
-conifer_list_2 = lapply(conifer_list,rearrange_columns)
-
-sapply(conifer_list_2, names) %>% View
-
-# 열 이름 확인
-for(k in 5:15){
-  get_unique_column_names(conifer_list_2, k) %>% print
+# broadleaf.list에 있는 각 데이터프레임의 열 이름 수정
+for (i in seq_along(broadleaf.list)) {
+  # 현재 데이터프레임
+  df <- broadleaf.list[[i]]
+  
+  # 열 이름 찾기
+  col_names <- colnames(df)
+  start_index <- 4
+  end_index <- which(col_names == "Categorized_L3_New") - 1
+  
+  # 열 이름 수정
+  if (length(start_index:end_index) > 0) {
+    colnames(df)[start_index:end_index] <- paste0("활엽수_", col_names[start_index:end_index])
+  }
+  
+  # 수정된 데이터프레임을 다시 리스트에 저장
+  broadleaf.list[[i]] <- df
 }
 
 
-# 짓나무 -> 잣나무
-conifer_list_2 = rename_column_in_list_korean_pine(conifer_list_2)
-for(k in 5:11){
-  get_unique_column_names(conifer_list_2, k) %>% print
+
+# 결과 출력
+broadleaf.list[[1]] %>% View
+
+
+
+
+
+
+# 🟩 각 열이름 변경 ==============================================================
+## 🟨 활엽수 ====================================================================
+names_broadleaf = sapply(broadleaf.list, function(x){
+  names(x)[3:20]
+})
+
+# 열 이름 변경 규칙을 적용하는 함수 정의
+rename_columns <- function(df) {
+  col_names <- colnames(df)
+  
+  # 열 이름 변경 규칙 적용
+  if (any(grepl("고로쇠", col_names) & grepl("면적", col_names))) {
+    col_names[grepl("고로쇠", col_names) & grepl("면적", col_names)] <- "활엽수_고로쇠_면적"
+  }
+  if (any(grepl("자작나무", col_names) & grepl("본수|그루수", col_names))) {
+    col_names[grepl("자작나무", col_names) & grepl("본수|그루수", col_names)] <- "활엽수_자작나무_본수"
+  }
+  if (any(grepl("계|합계", col_names) & grepl("면적", col_names))) {
+    col_names[grepl("계|합계", col_names) & grepl("면적", col_names)] <- "활엽수_계_면적"
+  }
+  if (any(grepl("계|합계", col_names) & grepl("본수|그루수", col_names))) {
+    col_names[grepl("계|합계", col_names) & grepl("본수|그루수", col_names)] <- "활엽수_계_본수"
+  }
+  if (any(grepl("느티나무", col_names) & grepl("면적", col_names))) {
+    col_names[grepl("느티나무", col_names) & grepl("면적", col_names)] <- "활엽수_느티나무_면적"
+  }
+  if (any(grepl("느티나무", col_names) & grepl("본수|그루수", col_names))) {
+    col_names[grepl("느티나무", col_names) & grepl("본수|그루수", col_names)] <- "활엽수_느티나무_본수"
+  }
+  if (any(grepl("물푸레", col_names) & grepl("면적", col_names))) {
+    col_names[grepl("물푸레", col_names) & grepl("면적", col_names)] <- "활엽수_물푸레_면적"
+  }
+  if (any(grepl("물푸레", col_names) & grepl("본수|그루수", col_names))) {
+    col_names[grepl("물푸레", col_names) & grepl("본수|그루수", col_names)] <- "활엽수_물푸레_본수"
+  }
+  if (any(grepl("벚나무", col_names) & grepl("면적", col_names))) {
+    col_names[grepl("벚나무", col_names) & grepl("면적", col_names)] <- "활엽수_벚나무_면적"
+  }
+  if (any(grepl("자작", col_names) & grepl("면적", col_names))) {
+    col_names[grepl("자작", col_names) & grepl("면적", col_names)] <- "활엽수_자작나무_면적"
+  }
+  if (any(grepl("벚나무", col_names) & grepl("본수|그루수", col_names))) {
+    col_names[grepl("벚나무", col_names) & grepl("본수|그루수", col_names)] <- "활엽수_벚나무_본수"
+  }
+  if (any(grepl("상수리", col_names) & grepl("면적", col_names))) {
+    col_names[grepl("상수리", col_names) & grepl("면적", col_names)] <- "활엽수_상수리_면적"
+  }
+  if (any(grepl("상수리", col_names) & grepl("본수|그루수", col_names))) {
+    col_names[grepl("상수리", col_names) & grepl("본수|그루수", col_names)] <- "활엽수_상수리_본수"
+  }
+  if (any(grepl("기타", col_names) & grepl("면적", col_names))) {
+    col_names[grepl("기타", col_names) & grepl("면적", col_names)] <- "활엽수_기타_면적"
+  }
+  if (any(grepl("기타", col_names) & grepl("본수|그루수", col_names))) {
+    col_names[grepl("기타", col_names) & grepl("본수|그루수", col_names)] <- "활엽수_기타_본수"
+  }
+  
+  # 모든 조건을 만족하는 경우
+  if (any(grepl("고로쇠", col_names) & grepl("본수", col_names))) {
+    col_names[grepl("고로쇠", col_names) & grepl("본수", col_names)] <- "활엽수_고로쇠_본수"
+  }
+  if (any(grepl("고로쇠", col_names) & grepl("그루수", col_names))) {
+    col_names[grepl("고로쇠", col_names) & grepl("그루수", col_names)] <- "활엽수_고로쇠_본수"
+  }
+  
+  # 변경된 열 이름을 데이터프레임에 적용
+  colnames(df) <- col_names
+  return(df)
 }
 
+# broadleaf.list의 각 데이터프레임에 대해 열 이름 변경 함수 적용하여 새로운 리스트 생성
+broadleaf.list_2 <- lapply(broadleaf.list, rename_columns)
+
+# 결과 확인
+broadleaf.list_2
+
+names_broadleaf = sapply(broadleaf.list_2, function(x){
+  names(x)[3:20]
+})
+
+View(names_broadleaf)
+
+sapply(broadleaf.list_2, names)
+
+ind = sapply(broadleaf.list_2, function(x){
+  "활엽수_갑_본수" %in% names(x)
+}) %>% which
+
+
+broadleaf.list_2 = lapply(broadleaf.list_2, function(x){
+  if("활엽수_갑_본수" %in% names(x)){
+    
+    x = x %>% rename("활엽수_계_본수" = "활엽수_갑_본수")
+    
+  }
+  if("활엽수_구분" %in% names(x)){
+    
+    if(x[["활엽수_구분"]] %>% is.na %>% all){
+      
+      x[["활엽수_구분"]] = NULL
+      
+    }
+  }
+  x
+})
+# broadleaf.list_2[[7]] %>% View
+# ind
+
+
+broadleaf.df = bind_rows(broadleaf.list_2)
+names(broadleaf.df)
 
 
 
 
-### 🟨 활엽수 ===================================================================
-sapply(broadleaf_list, names) %>% View
+
+## 🟨 침엽수 ====================================================================
+names_conifer = sapply(conifer.list, function(x){
+  names(x)[3:20]
+})
+print(names_conifer)
 
 
-# 이름변경
-names(broadleaf_list$`2016`) = names(broadleaf_list$`2017`)
+# 열 이름 변경 규칙을 적용하는 함수 정의
+rename_columns_conifer <- function(df) {
+  col_names <- colnames(df)
+  
+  # 열 이름 변경 규칙 적용
+  if (any(grepl("소나무", col_names) & grepl("면적", col_names))) {
+    col_names[grepl("소나무", col_names) & grepl("면적", col_names)] <- "침엽수_소나무_면적"
+  }
+  if (any(grepl("소나무", col_names) & grepl("본수|그루수", col_names))) {
+    col_names[grepl("소나무", col_names) & grepl("본수|그루수", col_names)] <- "침엽수_소나무_본수"
+  }
+  if (any(grepl("짓나무", col_names) & grepl("면적", col_names))) {
+    col_names[grepl("짓나무", col_names) & grepl("면적", col_names)] <- "침엽수_잣나무_면적"
+  }
+  if (any(grepl("짓나무", col_names) & grepl("본수|그루수", col_names))) {
+    col_names[grepl("짓나무", col_names) & grepl("본수|그루수", col_names)] <- "침엽수_잣나무_본수"
+  }
+  
+  if (any(grepl("잣나무", col_names) & grepl("면적", col_names))) {
+    col_names[grepl("잣나무", col_names) & grepl("면적", col_names)] <- "침엽수_잣나무_면적"
+  }
+  if (any(grepl("잣나무", col_names) & grepl("본수|그루수", col_names))) {
+    col_names[grepl("잣나무", col_names) & grepl("본수|그루수", col_names)] <- "침엽수_잣나무_본수"
+  }
+  
+  
+  if (any(grepl("낙엽송", col_names) & grepl("면적", col_names))) {
+    col_names[grepl("낙엽송", col_names) & grepl("면적", col_names)] <- "침엽수_낙엽송_면적"
+  }
+  if (any(grepl("낙엽송", col_names) & grepl("본수|그루수", col_names))) {
+    col_names[grepl("낙엽송", col_names) & grepl("본수|그루수", col_names)] <- "침엽수_낙엽송_본수"
+  }
+  if (any(grepl("리기다", col_names) & grepl("면적", col_names))) {
+    col_names[grepl("리기다", col_names) & grepl("면적", col_names)] <- "침엽수_리기다_면적"
+  }
+  if (any(grepl("리기다", col_names) & grepl("본수|그루수", col_names))) {
+    col_names[grepl("리기다", col_names) & grepl("본수|그루수", col_names)] <- "침엽수_리기다_본수"
+  }
+  if (any(grepl("삼나무", col_names) & grepl("면적", col_names))) {
+    col_names[grepl("삼나무", col_names) & grepl("면적", col_names)] <- "침엽수_삼나무_면적"
+  }
+  if (any(grepl("삼나무", col_names) & grepl("본수|그루수", col_names))) {
+    col_names[grepl("삼나무", col_names) & grepl("본수|그루수", col_names)] <- "침엽수_삼나무_본수"
+  }
+  if (any(grepl("편백", col_names) & grepl("면적", col_names))) {
+    col_names[grepl("편백", col_names) & grepl("면적", col_names)] <- "침엽수_편백_면적"
+  }
+  if (any(grepl("편백", col_names) & grepl("본수|그루수", col_names))) {
+    col_names[grepl("편백", col_names) & grepl("본수|그루수", col_names)] <- "침엽수_편백_본수"
+  }
+  if (any(grepl("해송", col_names) & grepl("면적", col_names))) {
+    col_names[grepl("해송", col_names) & grepl("면적", col_names)] <- "침엽수_해송_면적"
+  }
+  if (any(grepl("해송", col_names) & grepl("본수|그루수", col_names))) {
+    col_names[grepl("해송", col_names) & grepl("본수|그루수", col_names)] <- "침엽수_해송_본수"
+  }
+  if (any(grepl("기타", col_names) & grepl("면적", col_names))) {
+    col_names[grepl("기타", col_names) & grepl("면적", col_names)] <- "침엽수_기타_면적"
+  }
+  if (any(grepl("기타", col_names) & grepl("본수|그루수", col_names))) {
+    col_names[grepl("기타", col_names) & grepl("본수|그루수", col_names)] <- "침엽수_기타_본수"
+  }
+  if (any(grepl("계|합계", col_names) & grepl("면적", col_names))) {
+    col_names[grepl("계|합계", col_names) & grepl("면적", col_names)] <- "침엽수_계_면적"
+  }
+  if (any(grepl("계|합계", col_names) & grepl("본수|그루수", col_names))) {
+    col_names[grepl("계|합계", col_names) & grepl("본수|그루수", col_names)] <- "침엽수_계_본수"
+  }
+  
+  # 변경된 열 이름을 데이터프레임에 적용
+  colnames(df) <- col_names
+  return(df)
+}
 
-sapply(broadleaf_list, names) %>% View
+# conifer.list의 각 데이터프레임에 대해 열 이름 변경 함수 적용하여 새로운 리스트 생성
+conifer.list_2 <- lapply(conifer.list, rename_columns_conifer)
+
+# 결과 확인
+conifer.list_2
+names_conifer = sapply(conifer.list_2, function(x){
+  names(x)[3:20]
+})
+print(names_conifer)
+
+
+
+
+conifer.list_3 = lapply(conifer.list_2, function(x){
+  if( "침엽수_구분" %in% names(x)){
+    
+    if(x[[ "침엽수_구분"]] %>% is.na %>% all){
+      
+      x[[ "침엽수_구분"]] = NULL
+      
+    }
+  }
+  
+  if( "침엽수_No.ofsdls._구분" %in% names(x)){
+    
+    if(x[[ "침엽수_No.ofsdls._구분"]] %>% is.na %>% all){
+      
+      x[[ "침엽수_No.ofsdls._구분"]] = NULL
+      
+    }
+  }
+  x
+})
+
+
+
+
+conifer.df = bind_rows(conifer.list_3)
+names(conifer.df)
+conifer.df = conifer.df %>% relocate(contains("해송"), .after = 20) %>% relocate(Categorized_L3_New, .before = Categorized_L3)
+names(conifer.df)
 
 
 
 
 
-# 🟥 각 데이터 합치기 =========================================================================
-conifer_df = bind_rows(conifer_list_2) %>% 
-  relocate("해송_면적", .after = "삼나무_면적")
-broadleaf_df = bind_rows(broadleaf_list)
-# View(conifer_df)
-broadleaf_df %>% View
+
 
 
 # 🟥 2012_1, 2012_2 =========================================================================
 library(dplyr)
 
-broadleaf_df <- broadleaf_df %>%
+broadleaf.df <- broadleaf.df %>%
   mutate(구분 = if_else(구분 == "2012_1", "2012",
-                      if_else(구분 == "2012_2", "2013", 구분)))
+                      if_else(구분 == "2012_2", "2013", 구분))) %>% 
+  arrange(구분, year)
+
+
+
+
+conifer.df  = conifer.df %>% arrange(구분, year)
+View(conifer.df)
 
 
 
 
 
-# 🟥 침엽수 활엽수 합치기 =========================================================================
-## 🟩 열이름에 침엽수, 활엽수 문자열 추가 ==============================================================
-conifer_df_2 = add_prefix_to_columns(conifer_df, "_면적", "침엽수_")
-broadleaf_df_2 = add_prefix_to_columns(broadleaf_df, "_면적", "활엽수_")
-View(conifer_df_2)
-View(broadleaf_df_2)
-
-
-## 🟩 데이터합치기 ==============================================================
-names(conifer_df_2)[3:12]
-names(broadleaf_df_2)[4:11]
-
-
-if(all(conifer_df_2$구분 == broadleaf_df_2$구분) && nrow(conifer_df_2) == nrow(broadleaf_df_2)){
+# 🟥 합계 비교=========================================================================
+## 🟨 침엽수 =============================================================================
+# "_본수"로 끝나는 열을 합산하고, "침엽수_계_본수"와 비교하는 열을 생성하는 함수
+compare_columns <- function(df) {
+  # "_본수"로 끝나는 열 이름 추출 (단, "침엽수_계_본수"는 제외)
+  bonsoo_columns <- grep("_본수$", names(df), value = TRUE)
+  bonsoo_columns <- setdiff(bonsoo_columns, "침엽수_계_본수")
   
-  combined.df = cbind(conifer_df_2[3:12], broadleaf_df_2[4:11])
-
-}else{
-  stop("Check the columns!!")
+  # "_본수" 열 합산
+  df$총_본수 <- rowSums(df[bonsoo_columns], na.rm = TRUE)
+  
+  # "침엽수_계_본수"와 합산한 총 본수의 차이를 비교하는 열 생성
+  df$본수_차이 <- df$총_본수 - df$침엽수_계_본수
+  
+  # 새로운 열을 "침엽수_계_본수" 바로 뒤로 이동
+  df <- df[c(names(df)[1:match("침엽수_계_본수", names(df))], "총_본수", "본수_차이", names(df)[(match("침엽수_계_본수", names(df)) + 1):(ncol(df) - 2)])]
+  
+  return(df)
 }
 
+# "_면적"으로 끝나는 열에 대해 동일한 작업을 수행하는 함수
+compare_columns_area <- function(df) {
+  # "_면적"으로 끝나는 열 이름 추출 (단, "침엽수_계_면적"은 제외)
+  area_columns <- grep("_면적$", names(df), value = TRUE)
+  area_columns <- setdiff(area_columns, "침엽수_계_면적")
+  
+  # "_면적" 열 합산
+  df$총_면적 <- rowSums(df[area_columns], na.rm = TRUE)
+  
+  # "침엽수_계_면적"와 합산한 총 면적의 차이를 비교하는 열 생성
+  df$면적_차이 <- df$총_면적 - df$침엽수_계_면적
+  
+  # 새로운 열을 "침엽수_계_면적" 바로 뒤로 이동
+  df <- df[c(names(df)[1:match("침엽수_계_면적", names(df))], "총_면적", "면적_차이", names(df)[(match("침엽수_계_면적", names(df)) + 1):(ncol(df) - 2)])]
+  
+  return(df)
+}
 
+# "본수"에 대한 작업 수행
+conifer.df <- compare_columns(conifer.df)
 
+# "면적"에 대한 작업 수행
+conifer.df <- compare_columns_area(conifer.df)
 
-View(combined.df)
-
-
-# 🟥 각 합계 비교 ======================================================================================
-combined.df %>% names
+# 결과 확인
+print(conifer.df)
+View(conifer.df)
+names(conifer.df)
 
 library(dplyr)
 
-# 침엽수 관련 열 합 계산 및 비교, NA 값 제외하고 소수점 첫째자리에서 반올림
-combined.df %>%
-  mutate(침엽수_합 = round(rowSums(select(., starts_with("침엽수_"), -침엽수_계_면적), na.rm = TRUE), 1)) %>%
-  mutate(침엽수_비교 = 침엽수_합 == round(침엽수_계_면적, 1)) %>%
-  select(침엽수_계_면적, 침엽수_합, 침엽수_비교)
+# 열 이름 앞에 "침엽수_"를 붙이는 코드
+conifer.df <- conifer.df %>%
+  rename_with(~ paste0("침엽수_", .), c("총_면적", "면적_차이", "총_본수", "본수_차이"))
 
-# 활엽수 관련 열 합 계산 및 비교, NA 값 제외하고 소수점 첫째자리에서 반올림
-combined.df %>%
-  mutate(활엽수_합 = round(rowSums(select(., starts_with("활엽수_"), -활엽수_계_면적), na.rm = TRUE), 1)) %>%
-  mutate(활엽수_비교 = 활엽수_합 == round(활엽수_계_면적, 1)) %>%
-  select(활엽수_계_면적, 활엽수_합, 활엽수_비교)
+# 결과 확인
+print(colnames(conifer.df))
 
 
 
+## 🟨 활엽수 =============================================================================
+names(broadleaf.df)
+
+# "_본수"로 끝나는 열을 합산하고, "활엽수_계_본수"와 비교하는 열을 생성하는 함수
+compare_columns_broadleaf <- function(df) {
+  # "_본수"로 끝나는 열 이름 추출 (단, "활엽수_계_본수"는 제외)
+  bonsoo_columns <- grep("_본수$", names(df), value = TRUE)
+  bonsoo_columns <- setdiff(bonsoo_columns, "활엽수_계_본수")
+  
+  # "_본수" 열 합산
+  df$총_본수 <- rowSums(df[bonsoo_columns], na.rm = TRUE)
+  
+  # "활엽수_계_본수"와 합산한 총 본수의 차이를 비교하는 열 생성
+  df$본수_차이 <- df$총_본수 - df$활엽수_계_본수
+  
+  # 새로운 열을 "활엽수_계_본수" 바로 뒤로 이동
+  df <- df[c(names(df)[1:match("활엽수_계_본수", names(df))], "총_본수", "본수_차이", names(df)[(match("활엽수_계_본수", names(df)) + 1):(ncol(df) - 2)])]
+  
+  return(df)
+}
+
+# "_면적"으로 끝나는 열에 대해 동일한 작업을 수행하는 함수
+compare_columns_area_broadleaf <- function(df) {
+  # "_면적"으로 끝나는 열 이름 추출 (단, "활엽수_계_면적"은 제외)
+  area_columns <- grep("_면적$", names(df), value = TRUE)
+  area_columns <- setdiff(area_columns, "활엽수_계_면적")
+  
+  # "_면적" 열 합산
+  df$총_면적 <- rowSums(df[area_columns], na.rm = TRUE)
+  
+  # "활엽수_계_면적"와 합산한 총 면적의 차이를 비교하는 열 생성
+  df$면적_차이 <- df$총_면적 - df$활엽수_계_면적
+  
+  # 새로운 열을 "활엽수_계_면적" 바로 뒤로 이동
+  df <- df[c(names(df)[1:match("활엽수_계_면적", names(df))], "총_면적", "면적_차이", names(df)[(match("활엽수_계_면적", names(df)) + 1):(ncol(df) - 2)])]
+  
+  return(df)
+}
+
+# "본수"에 대한 작업 수행
+broadleaf.df <- compare_columns_broadleaf(broadleaf.df)
+
+# "면적"에 대한 작업 수행
+broadleaf.df <- compare_columns_area_broadleaf(broadleaf.df)
+
+# 결과 확인
+View(broadleaf.df)
+names(broadleaf.df)
+
+broadleaf.df = broadleaf.df %>% 
+  rename_with(~ paste0("활엽수_", .), c("총_면적", "면적_차이", "총_본수", "본수_차이"))
+
+# 🟪 활엽수 침엽수 합치기 ======================================================================================
+names(broadleaf.df)
+names(conifer.df)
+all(conifer.df$구분 == broadleaf.df$구분)
+all(conifer.df$year == broadleaf.df$year)
+  
+combined_data.df = cbind(conifer.df[1:25], 
+                         broadleaf.df[4:23], 
+                         conifer.df[26:ncol(conifer.df)]) %>% 
+  relocate(year, .after = "구분")
 
 
 
-# 🟥 활엽수 침엽수 정보 추가 ======================================================================================
-names(conifer_df_2)[c(1,13:ncol(conifer_df_2))]
-names(broadleaf_df_2)[c(1:3, 12:ncol(broadleaf_df_2))]
-selected_conifer = conifer_df_2[c(1,13:ncol(conifer_df_2))]
-selected_broadleaf = broadleaf_df_2[c(1:3, 12:ncol(broadleaf_df_2))]
 
-names(selected_conifer) = paste0("침엽수_", names(selected_conifer))
-names(selected_broadleaf) = paste0("활엽수_", names(selected_broadleaf))
-
-combined.df_2 = cbind(combined.df, selected_conifer, selected_broadleaf)
+# 🟪 하나의 행만 추출 ======================================================================================
+conifer.df$구분 
+combined_data.df %>% View
 
 
+# 중복값을 "year"을 기준으로 최신 연도로 선택하는 함수
+remove_duplicates <- function(df) {
+  # 데이터프레임을 "구분"을 기준으로 그룹화하고, "year"의 최신 값만 남김
+  df <- df[order(df$구분, -df$year), ]
+  df <- df[!duplicated(df$구분), ]
+  
+  return(df)
+}
+
+
+# 중복 제거 함수 적용
+combined_data.df_2 <- remove_duplicates(combined_data.df)
+
+# 결과 확인
+View(combined_data.df_2)
+
+
+# 🟥 계 열이름 변경 ======================================================================================
+names(combined_data.df_2)
+
+# 열 이름 변경
+colnames(combined_data.df_2) <- gsub("_계_", "_합계_", colnames(combined_data.df_2))
+
+# 결과 확인
+print(colnames(combined_data.df_2))
 
 # 🟥 Export ======================================================================================
-path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID/@_조림/(@완료)수종별 조림실적Plantation forest by tree species/@완료"
-file_name = "4.2004~2022 침엽수, 활엽수 데이터합치기"
-write.xlsx(combined.df_2, file.path(path_save, paste0(file_name, ".xlsx")))
+path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/조림/수종별 조림실적Plantation forest by tree species/Combined"
+file_name = "4.Combined_04~22"
+write.xlsx(combined_data.df_2, file.path(path_save, paste0(file_name, ".xlsx")))
 
 
 
 
 
-# 🟥 실제 데이터와 비교 ======================================================================================
 
 
 
