@@ -1,3 +1,251 @@
+library(dplyr)
+# rm(list=ls())
+# 비교 및 하이라이트 함수 정의
+highlight_differences <- function(df, col_1, col_2, path_save, output_filename = "comparison.xlsx") {
+  # col_1과 col_2의 길이가 같은지 확인
+  if (length(col_1) != length(col_2)) {
+    stop("col_1과 col_2의 길이가 같아야 합니다.")
+  }
+  
+  # col_1과 col_2에 있는 열들이 실제로 데이터프레임에 존재하는지 확인
+  if (!all(col_1 %in% names(df)) || !all(col_2 %in% names(df))) {
+    stop("col_1 또는 col_2에 명시된 열이 데이터프레임에 존재하지 않습니다.")
+  }
+  
+  # 워크북 생성
+  wb <- createWorkbook()
+  addWorksheet(wb, "Sheet 1")
+  
+  # 데이터 프레임 추가
+  writeData(wb, "Sheet 1", df)
+  
+  # 하이라이트 스타일 정의
+  highlight_style <- createStyle(fontColour = "white", fgFill = "red")
+  
+  # 각 열 쌍을 비교
+  for (i in seq_along(col_1)) {
+    col1 <- col_1[i]
+    col2 <- col_2[i]
+    
+    # 차이가 있는 셀에 하이라이트 적용
+    for (j in 1:nrow(df)) {
+      if (!is.na(df[[col1]][j]) && !is.na(df[[col2]][j]) && df[[col1]][j] != df[[col2]][j]) {
+        # 차이가 있는 경우 하이라이트 적용
+        addStyle(wb, "Sheet 1", style = highlight_style, rows = j + 1, cols = which(names(df) %in% c(col1, col2)), gridExpand = TRUE)
+      }
+    }
+  }
+  
+  # 파일 경로 설정
+  full_path <- file.path(path_save, output_filename)
+  
+  # 엑셀 파일 저장
+  saveWorkbook(wb, file = full_path, overwrite = TRUE)
+  
+  # 메시지 출력
+  message("파일이 저장되었습니다: ", full_path)
+}
+
+
+# 함수 정의
+unique_by_classification <- function(data) {
+  
+  # Step 1: Classification을 기준으로 그룹화하고, 각 그룹에서 year 열의 최대 값을 가진 행을 선택
+  data <- data %>%
+    group_by(Classification) %>%
+    filter(year == max(year)) %>%
+    ungroup()
+  
+  # Step 2: 만약 여전히 Classification과 year가 동일한 행이 남아있다면 마지막 열의 값으로 중복을 해결
+  # 마지막 열의 이름 추출
+  last_column <- names(data)[ncol(data)]
+  
+  # Step 3: Classification과 year가 동일한 행 중 마지막 열이 같은 경우 첫 번째 행만 남김
+  data <- data %>%
+    group_by(Classification, year) %>%
+    filter({
+      # 마지막 열의 값이 모두 동일한 경우
+      if (all(is.na(!!sym(last_column))) || n_distinct(!!sym(last_column)) == 1) {
+        # 첫 번째 행만 남김
+        row_number() == 1
+      } else {
+        TRUE  # 그렇지 않으면 모든 행 유지
+      }
+    }) %>%
+    ungroup()
+  
+  return(data)
+}
+
+
+# rm(list=ls())
+process_data_list_adding_excluded_years <- function(data_list, years_all) {
+  
+  # years_all을 character로 변환
+  years_all <- as.character(years_all)
+  
+  # 각 데이터프레임에 대해 처리
+  data_list_processed <- lapply(data_list, function(df) {
+    # df = data_list[[1]]
+    # Classification 열을 character로 변환 (보통 factor로 되어 있을 수 있음)
+    df$Classification <- as.character(df$Classification)
+    
+    # 현재 데이터프레임에 존재하는 연도들
+    existing_years <- df$Classification
+    
+    # 추가해야 할 연도들 (years_all에 있지만, 기존 df에 없는 연도들)
+    missing_years <- setdiff(years_all, existing_years)
+    
+    if(length(missing_years) > 0) {
+      # NA로 채울 새로운 데이터프레임을 생성
+      
+      new_rows = matrix(NA, nrow = length(missing_years), ncol = ncol(df)) %>% as.data.frame %>% setNames(names(df))
+      new_rows$Classification = missing_years
+      
+      
+      # 기존 데이터프레임에 새로운 행을 추가
+      df <- rbind(df, new_rows) %>% arrange(Classification)
+    }
+    
+    return(df)
+  })
+  
+  return(data_list_processed)
+}
+
+
+
+
+check_continuous_years <- function(year_vector) {
+  # 연도 벡터의 최소값과 최대값을 구함
+  min_year <- min(year_vector)
+  max_year <- max(year_vector)
+  
+  # 최소값부터 최대값까지의 모든 연도 생성
+  complete_years <- seq(min_year, max_year)
+  
+  # 누락된 연도를 확인
+  missing_years <- setdiff(complete_years, year_vector)
+  
+  if (length(missing_years) == 0) {
+    return(TRUE)  # 모든 연도가 연속적으로 존재할 경우
+  } else {
+    return(missing_years)  # 누락된 연도를 반환
+  }
+}
+
+filter = dplyr::filter
+library(dplyr)
+
+library(dplyr)
+
+# 함수 정의
+move_last_column_after_year <- function(data) {
+  # 마지막 열의 이름 추출
+  last_column <- names(data)[ncol(data)]
+  
+  # 열 순서를 변경: 맨 마지막 열을 'year' 열 뒤로 옮김
+  data <- data %>%
+    relocate(all_of(last_column), .after = "year")
+  
+  return(data)
+}
+
+
+
+
+# 함수 정의
+select_columns_with_additional <- function(data, additional_columns) {
+  # 기본 선택할 열 목록
+  base_columns <- c("ID", "행", "Classification", "year", 
+                    "Categorized_L3_New", "Categorized_L3", "Categorized_L2",
+                    "NAME_L1", "NAME_L2", "NAME_L3", "NAME_L4", "NAME_L5",
+                    "ID_L1", "ID_L2", "ID_L3", "ID_L4", "ID_L5",
+                    "unit_L2", "unit_L3", "unit_L4", "unit_L5",
+                    "비고_L2", "비고_L3", "비고_L4", "비고_L5")
+  
+  # 추가 열을 함께 포함한 최종 열 목록
+  selected_columns <- unique(c(base_columns, additional_columns))
+  
+  # 데이터프레임에서 선택한 열들만 추출
+  selected_df <- data %>% select(all_of(selected_columns))
+  
+  # 추출된 데이터프레임 반환
+  return(selected_df)
+}
+
+
+
+# key가 여러 문자열인 경우, 모든 문자열을 포함하는 값을 추출하는 함수
+multi_grep <- function(keys, data) {
+  # 모든 문자열을 포함하는 열 이름을 찾음
+  filtered_names <- names(data)
+  
+  # 각 key에 대해 필터링하여 열 이름을 찾음
+  for (key in keys) {
+    filtered_names <- grep(key, filtered_names, value = TRUE)
+  }
+  
+  return(filtered_names)
+}
+
+library(dplyr)
+
+
+
+# 함수 정의
+combine_columns_by_keywords <- function(data, target_strings = NULL, target_columns = NULL, new_column_name) {
+  # 1) 열 이름 선택 (target_columns가 제공되면 이를 사용, 아니면 target_strings를 사용)
+  if (!is.null(target_columns)) {
+    # 사용자가 직접 열 이름을 입력한 경우
+    target_columns <- target_columns
+  } else if (!is.null(target_strings)) {
+    # target_strings를 이용해 열 선택
+    target_columns <- names(data)
+    for (string in target_strings) {
+      target_columns <- target_columns[grepl(string, target_columns)]
+    }
+  } else {
+    stop("target_strings 또는 target_columns 중 하나는 반드시 입력해야 합니다.")
+  }
+  
+  # 2) 새로운 열 생성 (반복문 사용)
+  new_column <- vector("list", nrow(data)) # 새로운 열을 저장할 리스트 생성
+  
+  for (i in seq_len(nrow(data))) {
+    # 각 행에 대해 값을 처리
+    values <- data[i, target_columns]
+    
+    # NA가 아닌 값들만 추출
+    non_na_values <- na.omit(as.vector(unlist(values)))
+    
+    # 조건 처리
+    if (length(non_na_values) == 0) {
+      new_column[[i]] <- NA
+    } else if (length(non_na_values) == 1) {
+      new_column[[i]] <- non_na_values[1]
+    } else if (length(unique(non_na_values)) > 1) {
+      warning("경고: 서로 다른 값이 존재합니다. 해당 행에 NA를 반환합니다.")
+      new_column[[i]] <- NA
+    } else {
+      new_column[[i]] <- non_na_values[1]
+    }
+  }
+  
+  # 리스트를 벡터로 변환하여 새로운 열로 추가
+  data[[new_column_name]] <- unlist(new_column)
+  
+  # 3) 사용된 열들을 제거
+  data <- data %>%
+    select(-all_of(target_columns))
+  
+  # 결과 반환
+  return(data)
+}
+
+
+
+
 # rm(list=ls())
 extract_summed_results = function(data.list){
   # 각 데이터프레임에 대해 계산을 수행하고 결과를 저장할 리스트 초기화
@@ -32,6 +280,8 @@ extract_summed_results = function(data.list){
     mutate(Diff = abs(Sum_Quantity - Calculated_Quantity_Sum))
   return(final_results)
 }
+
+filter = dplyr::filter
 
 # 함수 정의
 extract_matching_element <- function(names_list, id) {

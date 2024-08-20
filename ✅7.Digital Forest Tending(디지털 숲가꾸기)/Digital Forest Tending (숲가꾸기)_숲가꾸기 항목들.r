@@ -4,11 +4,15 @@ path_data_2 = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/5.디지ᄐ
 
 # 숲가꾸기 1 (2020 ~ 2022)
 data_1 = read.xlsx(path_data_1)
+View(data_1)
+
 
 # 조림
 data_2 = read.xlsx(path_data_2)
 
-
+# names(data_1)
+# 
+# View(data_1)
 
 # 🌫️ data1   ==============================================================================================
 ## 🟪 check  =======================================================================================
@@ -32,8 +36,12 @@ View(data_1_sub)
 
 
 
+
+
 ## 🟩 check the regions  =======================================================================================
 data_1_sub$`GROUP_FIELD(필지)` %>% unique
+
+
 
 
 ## 🟩 Group regions  =======================================================================================
@@ -48,6 +56,7 @@ data_1_sub <- data_1_sub %>%
     grepl("대전광역시", `GROUP_FIELD(필지)`) ~ "대전광역시",
     grepl("전라북도", `GROUP_FIELD(필지)`) ~ "전라북도",
     grepl("강원도", `GROUP_FIELD(필지)`) ~ "강원도",
+    grepl("강원특별자치도", `GROUP_FIELD(필지)`) ~ "강원도",
     grepl("울산광역시", `GROUP_FIELD(필지)`) ~ "울산광역시",
     grepl("서울특별시", `GROUP_FIELD(필지)`) ~ "서울특별시",
     grepl("부산광역시", `GROUP_FIELD(필지)`) ~ "부산광역시",
@@ -59,6 +68,8 @@ data_1_sub <- data_1_sub %>%
     TRUE ~ "기타"
   )) %>% 
   relocate(regions, .after = year)
+
+# data_1_sub %>% filter(regi ons == "서울특별시") %>% View
 
 # 결과 확인
 head(data_1_sub)
@@ -76,456 +87,147 @@ data_1_new = data_1_sub %>%
   rename("forest_tending" = `PMS3A011_FRCMB_NM1(숲가꾸기내역.작업종1)`) %>% 
   relocate(work_area, forest_tending, .after = 2)
 
+data_1_new$forest_tending %>% table
 
 
-## 🟨 각 지역별 숲가꾸기 데이터 합산  =======================================================================================
+
+
+
+## 🟨 각 지역별 연도별 숲가꾸기 데이터 합산  =======================================================================================
 # 각 지역별로 forest_tending에 따라 work_area를 합산한 새로운 데이터프레임 생성
 data_aggregated <- data_1_new %>%
-  group_by(regions, forest_tending) %>%
+  group_by(regions, forest_tending, year) %>%
   summarise(total_work_area = sum(work_area, na.rm = TRUE)) %>%
   ungroup()
+
+
 
 # 결과 확인
 data_aggregated %>% View
 unique(data_1_new$regions) %in%  data_aggregated$regions
 data_aggregated$regions %>% unique
 
-
-
-
-
-
-
-
-
-# 🌫 data3 ===============================================================================================
-## 🟪 Check the data ===============================================================================
-# View(data_3)
-
-
-
-## 🟪 change colname ===============================================================================
-data_3[,1] %>% unique
-colnames(data_3)[1] = "year"
-
-
-## 🟪 subset 2020, 2021 ===============================================================================
-data_3_sub = data_3 %>% filter(year %in% c("2020", "2021"))
-View(data_3_sub)
-
-
-## 🟪 Group Field ===============================================================================
-### 🟧 Check 3 col  ==================================================================================================
-#  GROUP FIELD : 필지
-data_3_sub[,3]
-colnames(data_3_sub)[3] = "GROUP_FIELD"
-
-data_3_sub[,3] %>% unique %>% length
-
-
-
-
-
-### 🟧 Extract each region  ==================================================================================================
-#### 🟩 save ====================================================================================
-data.list = list()
-data_sub.list = list()
-
-
-
-#### 🟩 1.경기도 ====================================================================================
-k = 1
-key = "경기도 "
-
-target = data_3_sub
-data.list[[k]] = exclude_by_string(target, 3, key)
-data_sub.list[[k]] = filter_by_string(target, 3, key)
-names(data_sub.list)[k] = names(data.list)[k] = key
-
-
-
-
-#### 🟩 2.경상남도 ====================================================================================
-k = 2
-key = "경상남도 "
-
-target = data.list[[k-1]]
-data.list[[k]] = exclude_by_string(target, 3, key)
-data_sub.list[[k]] = filter_by_string(target, 3, key)
-names(data_sub.list)[k] = names(data.list)[k] = key
-data.list[[k]][,3] %>% unique
-
-
-
-
-#### 🟩 3.충청남도 ====================================================================================
-k = 3
-key = "충청남도 "
-
-target = data.list[[k-1]]
-data.list[[k]] = exclude_by_string(target, 3, key)
-data_sub.list[[k]] = filter_by_string(target, 3, key)
-names(data_sub.list)[k] = names(data.list)[k] = key
-data.list[[k]][,3] %>% unique
-
-
-
-
-#### 🟩 4.전라남도 ====================================================================================
-k = 4
-key = "전라남도 "
-
-target = data.list[[k-1]]
-data.list[[k]] = exclude_by_string(target, 3, key)
-data_sub.list[[k]] = filter_by_string(target, 3, key)
-names(data_sub.list)[k] = names(data.list)[k] = key
-data.list[[k]][,3] %>% unique
-
-
-
-#### 🟩 5.충청북도 ====================================================================================
-k = 5
-key = "충청북도 "
-
-target = data.list[[k-1]]
-data.list[[k]] = exclude_by_string(target, 3, key)
-data_sub.list[[k]] = filter_by_string(target, 3, key)
-names(data_sub.list)[k] = names(data.list)[k] = key
-data.list[[k]][,3] %>% unique
-
-
-
-
-#### 🟩 6.경상북도 ====================================================================================
-k = 6
-key = "경상북도 "
-
-target = data.list[[k-1]]
-data.list[[k]] = exclude_by_string(target, 3, key)
-data_sub.list[[k]] = filter_by_string(target, 3, key)
-names(data_sub.list)[k] = names(data.list)[k] = key
-data.list[[k]][,3] %>% unique
-
-
-
-#### 🟩 7.대전광역시 ====================================================================================
-k = 7
-key = "대전광역시 "
-
-target = data.list[[k-1]]
-data.list[[k]] = exclude_by_string(target, 3, key)
-data_sub.list[[k]] = filter_by_string(target, 3, key)
-names(data_sub.list)[k] = names(data.list)[k] = key
-data.list[[k]][,3] %>% unique
-
-
-
-#### 🟩 8.전라북도 ====================================================================================
-k = 8
-key = "전라북도 "
-
-target = data.list[[k-1]]
-data.list[[k]] = exclude_by_string(target, 3, key)
-data_sub.list[[k]] = filter_by_string(target, 3, key)
-names(data_sub.list)[k] = names(data.list)[k] = key
-data.list[[k]][,3] %>% unique
-
-
-
-
-#### 🟩 9.강원도 ====================================================================================
-k = 9
-key = "강원도 "
-
-target = data.list[[k-1]]
-data.list[[k]] = exclude_by_string(target, 3, key)
-data_sub.list[[k]] = filter_by_string(target, 3, key)
-names(data_sub.list)[k] = names(data.list)[k] = key
-data.list[[k]][,3] %>% unique
-
-
-
-#### 🟩 10.울산광역시 ====================================================================================
-k = 10
-key = "울산광역시 "
-
-target = data.list[[k-1]]
-data.list[[k]] = exclude_by_string(target, 3, key)
-data_sub.list[[k]] = filter_by_string(target, 3, key)
-names(data_sub.list)[k] = names(data.list)[k] = key
-data.list[[k]][,3] %>% unique
-
-
-
-
-#### 🟩 11.서울특별시 ====================================================================================
-k = 11
-key = "서울특별시 "
-
-target = data.list[[k-1]]
-data.list[[k]] = exclude_by_string(target, 3, key)
-data_sub.list[[k]] = filter_by_string(target, 3, key)
-names(data_sub.list)[k] = names(data.list)[k] = key
-data.list[[k]][,3] %>% unique
-
-
-
-
-#### 🟩 12.부산광역시 ====================================================================================
-k = 12
-key = "부산광역시 "
-
-target = data.list[[k-1]]
-data.list[[k]] = exclude_by_string(target, 3, key)
-data_sub.list[[k]] = filter_by_string(target, 3, key)
-names(data_sub.list)[k] = names(data.list)[k] = key
-data.list[[k]][,3] %>% unique
-
-
-
-
-
-#### 🟩 13.인천광역시 ====================================================================================
-k = 13
-key = "인천광역시 "
-
-target = data.list[[k-1]]
-data.list[[k]] = exclude_by_string(target, 3, key)
-data_sub.list[[k]] = filter_by_string(target, 3, key)
-names(data_sub.list)[k] = names(data.list)[k] = key
-data.list[[k]][,3] %>% unique
-
-
-
-
-#### 🟩 14.제주특별 ====================================================================================
-k = 14
-key = "제주특별자치도 "
-
-target = data.list[[k-1]]
-data.list[[k]] = exclude_by_string(target, 3, key)
-data_sub.list[[k]] = filter_by_string(target, 3, key)
-names(data_sub.list)[k] = names(data.list)[k] = key
-data.list[[k]][,3] %>% unique
-
-
-
-
-#### 🟩 15.대구광역시 ====================================================================================
-k = 15
-key = "대구광역시 "
-
-target = data.list[[k-1]]
-data.list[[k]] = exclude_by_string(target, 3, key)
-data_sub.list[[k]] = filter_by_string(target, 3, key)
-names(data_sub.list)[k] = names(data.list)[k] = key
-data.list[[k]][,3] %>% unique
-
-
-
-
-#### 🟩 16.광주광역시 ====================================================================================
-k = 16
-key = "광주광역시 "
-
-target = data.list[[k-1]]
-data.list[[k]] = exclude_by_string(target, 3, key)
-data_sub.list[[k]] = filter_by_string(target, 3, key)
-names(data_sub.list)[k] = names(data.list)[k] = key
-data.list[[k]][,3] %>% unique
-
-
-
-
-#### 🟩 17.세종특별자치시 ====================================================================================
-k = 17
-key = "세종특별자치시 "
-
-target = data.list[[k-1]]
-data.list[[k]] = exclude_by_string(target, 3, key)
-data_sub.list[[k]] = filter_by_string(target, 3, key)
-names(data_sub.list)[k] = names(data.list)[k] = key
-data.list[[k]][,3] %>% unique
-dim(data.list[[k]])
-View(data.list[[k]])
-
-
-
-#### 🟩 remove space ====================================================================================
-names(data_sub.list)
-names(data_sub.list) = gsub(" ", "", names(data_sub.list))
-
-
-#### 🟩 Export ====================================================================================
-path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/5.디지털숲가꾸기/Exported"
-
-data_2020.list = list()
-data_2021.list = list()
-
-for(i in seq_along(data_sub.list)){
-  
-  ith_region = names(data_sub.list)[i]
-  
-  ith_name_2020 = ith_region %>% paste0("디지털숲가꾸기_2020_", ., ".csv")
-  ith_name_2021 = ith_region %>% paste0("디지털숲가꾸기_2021_", ., ".csv")
-  
-  ith_data = data_sub.list[[i]] 
-  ith_data_2020 = ith_data %>% filter(year == "2020")
-  ith_data_2021 = ith_data %>% filter(year == "2021")
-  
-  
-  ith_data_2020_new = list()
-  ith_data_2020_new[["Group_Field"]] = ith_region
-  ith_data_2020_new[["Seeling"]] = sum(ith_data_2020$`PMS3A013_BONSU(산림자원조성사업수종정보.본수)`, na.rm = T)
-  
-  
-  ith_data_2021_new = list()
-  ith_data_2021_new[["Group_Field"]] = ith_region
-  ith_data_2021_new[["Seeling"]] = sum(ith_data_2021$`PMS3A013_BONSU(산림자원조성사업수종정보.본수)`, na.rm = T)
-  
-  data_2020.list[[i]] = bind_cols(ith_data_2020_new)
-  data_2021.list[[i]] = bind_cols(ith_data_2021_new)
-  
-  write.csv(bind_cols(ith_data_2020_new), file.path(path_save, paste0("Summed_", ith_name_2020)), row.names = F)
-  write.csv(bind_cols(ith_data_2021_new), file.path(path_save, paste0("Summed_", ith_name_2021)), row.names = F)
-  
-  write.csv(ith_data_2020, file.path(path_save, ith_name_2020), row.names = F)
-  write.csv(ith_data_2021, file.path(path_save, ith_name_2021), row.names = F)
-  
+# 검토
+data_1_new %>% 
+  filter(regions == "강원도" & 
+           forest_tending == "어린나무가꾸기" &
+              year == "2020") %>% 
+  pull(work_area) %>% 
+  sum(na.rm = T)
+
+data_aggregated %>% 
+  filter(regions == "강원도" &
+           forest_tending == "어린나무가꾸기" & 
+             year == "2020") %>% 
+  pull(total_work_area)
+
+
+
+## 🟨 연도별 재구성  =======================================================================================
+data_aggregated_2021 = data_aggregated %>% filter(year == "2021")
+data_aggregated_2020 = data_aggregated %>% filter(year == "2020")
+data_aggregated$year
+
+
+
+
+## 🟦 연보데이터 추출  =======================================================================================
+### 🟧 데이터 로드 ===================================================================================
+# 2021년도 데이터 -> 2022 연보를 의미
+path_yb_2021 = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/숲가꾸기/숲 가꾸기Forest tending/2022_YRBK_00520408.csv"
+# 2020년도 데이터 -> 2021 연보를 의미
+path_yb_2020 = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/숲가꾸기/숲 가꾸기Forest tending/2021_YRBK_00510409.csv"
+
+yb_2021 = read.csv(path_yb_2021) %>% relocate(year, .after = 3)
+yb_2020 = read.csv(path_yb_2020) %>% relocate(year, .after = 3)
+View(yb_2021)
+View(yb_2020)
+
+### 🟧 Check names ===================================================================================
+# names(yb_2021)
+names(yb_2020)[3] = names(yb_2021)[3] = "classification"
+names(yb_2020)[6] = names(yb_2021)[6] = "조림지가꾸기"
+names(yb_2020)[9] = names(yb_2021)[9] = "어린나무가꾸기"
+names(yb_2020)[10] = names(yb_2021)[10] = "큰나무가꾸기"
+
+
+### 🟧 Extract data ===================================================================================
+View(yb_2021)
+View(yb_2021)
+yb_2021_sub = yb_2021 %>% 
+  select(classification, 조림지가꾸기, 어린나무가꾸기, 큰나무가꾸기) %>% 
+  filter(classification %in% data_aggregated$regions)
+yb_2020_sub = yb_2020 %>% 
+  select(classification, 조림지가꾸기, 어린나무가꾸기, 큰나무가꾸기) %>% 
+  filter(classification %in% data_aggregated$regions)
+
+
+
+### 🟧 데이터재구성 ===================================================================================
+yb_2021_sub %>% head
+names(yb_2021_sub)
+# 데이터 변환 함수
+transform_data <- function(data, year_value) {
+  data %>%
+    pivot_longer(cols = c("조림지가꾸기", "어린나무가꾸기", "큰나무가꾸기"),
+                 names_to = "forest_tending",
+                 values_to = "total_work_area") %>%
+    rename(regions = classification) %>%
+    select(regions, forest_tending, total_work_area)
 }
 
-names(data_2020.list) = names(data_sub.list)
-names(data_2021.list) = names(data_sub.list)
+yb_2021_sub_2 = transform_data(yb_2021_sub)
+yb_2020_sub_2 = transform_data(yb_2020_sub)
 
+View(yb_2021_sub_2)
+yb_2021_sub_2 %>% filter(regions == "서울특별시")
 
-test= data_sub.list$서울특별시
-test[[3]]
-test$`PMS3A013_BONSU(산림자원조성사업수종정보.본수)` %>% sum
 
 
 
+# 🟥 데이터 합치기  ===================================================================================
+# 데이터 체크
+data_aggregated_2021
+data_aggregated_2020
 
-# 🌫️ 임업통계연보 ================================================================================
-## 🟧 Load data ================================================================================
-path_2020_1 = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/조림/수종별 조림실적Plantation forest by tree species/5.04~23_활엽수, 침엽수/2020_YRBK_0050040601.csv"
-path_2020_2 = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/조림/수종별 조림실적Plantation forest by tree species/5.04~23_활엽수, 침엽수/2020_YRBK_0050040602.csv"
+yb_2021_sub_2
+yb_2020_sub_2
+View(yb_2021)
 
-path_2021_1 = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/조림/수종별 조림실적Plantation forest by tree species/5.04~23_활엽수, 침엽수/2021_YRBK_0051040601.csv"
-path_2021_2 = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/조림/수종별 조림실적Plantation forest by tree species/5.04~23_활엽수, 침엽수/2021_YRBK_0051040602.csv"
+names(data_aggregated_2021)
+names(yb_2021_sub_2)
+yb_2021_sub_2$forest_tending %>% table
 
+data_aggregated_2021 %>% filter(regions == "서울특별시")
+yb_2021 %>% View
 
-data_2020_1 = read.csv(path_2020_1)
-data_2020_2 = read.csv(path_2020_2)
-data_2021_1 = read.csv(path_2021_1)
-data_2021_2 = read.csv(path_2021_2)
+# 두 데이터프레임 병합 (regions와 forest_tending을 기준으로)
+combined_data_2021 <- left_join(data_aggregated_2021, yb_2021_sub_2,                                 
+                                by = c("regions", "forest_tending"), 
+                                suffix = c("_digital", "_yb"))
 
 
 
-## 🟧 지역별 합치기 ============================================================================================
-### 🟪 2020 ===========================================================================================
-region_1 = data_2020_1[[3]][-c(1:5)]
-region_2 = data_2020_2[[3]][-c(1:5)]
-all(region_1 == region_2)
+combined_data_2020 <- left_join(data_aggregated_2020, yb_2020_sub_2,                                 
+                                by = c("regions", "forest_tending"), 
+                                suffix = c("_digital", "_yb"))
 
-data_2020_1_sub = data_2020_1[-c(1:5), c(3,5)]
-data_2020_2_sub = data_2020_2[-c(1:5), c(3,5)]
 
-if(all(data_2020_1_sub$구분 ==  data_2020_2_sub$구분)){
-  
-  data_2020_combined = data_2020_1_sub
-  data_2020_combined$합계_본수 = data_2020_1_sub[[2]] + data_2020_2_sub[[2]]
-  
-}
 
+# 1000곱하기
+combined_data_2021 = combined_data_2021 %>% 
+  mutate(total_work_area_yb_1000ha = total_work_area_yb * 1000) %>% 
+  mutate(diff_abs = abs(total_work_area_yb_1000ha - total_work_area_digital))
+combined_data_2020 = combined_data_2020 %>% 
+  mutate(total_work_area_yb_1000ha = total_work_area_yb * 1000) %>% 
+  mutate(diff_abs = abs(total_work_area_yb_1000ha - total_work_area_digital))
 
 
-### 🟪 2021 ===========================================================================================
-region_1 = data_2021_1[[3]][-c(1:5)]
-region_2 = data_2021_2[[3]][-c(1:5)]
-all(region_1 == region_2)
 
-data_2021_1_sub = data_2021_1[-c(1:5), c(3,5)]
-data_2021_2_sub = data_2021_2[-c(1:5), c(3,5)]
-
-if(all(data_2021_1_sub$구분 ==  data_2021_2_sub$구분)){
-  
-  data_2021_combined = data_2021_1_sub
-  data_2021_combined$합계_본수 = data_2021_1_sub[[2]] + data_2021_2_sub[[2]]
-  
-}
-
-
-
-
-
-# 🌫️ 데이터 합계 비교 ==============================================================================
-## 🟧 이름 체크  ===========================================================================================
-data_2020_combined_sub = data_2020_combined %>% filter(data_2020_combined$구분 %in% names(data_2020.list))
-data_2021_combined_sub = data_2021_combined %>% filter(data_2021_combined$구분 %in% names(data_2021.list))
-
-data_2020_combined_sub[[1]]
-data_2021_combined_sub[[1]]
-
-
-
-## 🟧 리스트 데이터프레임으로  ===========================================================================================
-data_2020.df = bind_rows(data_2020.list)
-data_2021.df = bind_rows(data_2021.list)
-
-
-
-## 🟧 데이터 합치기  ===========================================================================================
-names(data_2021_combined_sub)[1] = names(data_2020_combined_sub)[1] = "Group_Field"
-combined_data_2020.df = merge(data_2020.df, data_2020_combined_sub, by = "Group_Field") %>% 
-  arrange(Group_Field)
-
-combined_data_2021.df = merge(data_2021.df, data_2021_combined_sub, by = "Group_Field") %>% 
-  arrange(Group_Field)
-
-
-
-## 🟧 천그루 단위 보정  ===========================================================================================
-combined_data_2020.df$임통_본수_New = combined_data_2020.df$합계_본수 * 1000 
-combined_data_2021.df$임통_본수_New = combined_data_2021.df$합계_본수 * 1000
-
-
-## 🟧 Export  ===========================================================================================
-write.csv(combined_data_2020.df, file.path(path_save, "2020.csv"), row.names=F)
-write.csv(combined_data_2021.df, file.path(path_save, "2021.csv"), row.names=F)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# 🟥 export  ===================================================================================
+path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/5.디지털숲가꾸기/Exported_2"
+write.csv(combined_data_2020, file.path(path_save, "comparison 2020.csv"), row.names = F)
+write.csv(combined_data_2021, file.path(path_save, "comparison 2021.csv"), row.names = F)
 
 
 
