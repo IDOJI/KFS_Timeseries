@@ -213,15 +213,15 @@ combined_data_2020 <- left_join(data_aggregated_2020, yb_2020_sub_2,
                                 suffix = c("_digital", "_yb"))
 
 
-
-# 1000곱하기
+# 🟥 ha로  unit 바꾸기  ===================================================================================
 combined_data_2021 = combined_data_2021 %>% 
-  mutate(total_work_area_yb_1000ha = total_work_area_yb * 1000) %>% 
-  mutate(diff_abs = abs(total_work_area_yb_1000ha - total_work_area_digital))
+  mutate(total_work_area_digital_ha = total_work_area_digital / 10000) %>% 
+  mutate(diff_abs = abs(total_work_area_digital_ha - total_work_area_yb))
 combined_data_2020 = combined_data_2020 %>% 
-  mutate(total_work_area_yb_1000ha = total_work_area_yb * 1000) %>% 
-  mutate(diff_abs = abs(total_work_area_yb_1000ha - total_work_area_digital))
+  mutate(total_work_area_digital_ha = total_work_area_digital / 10000) %>% 
+  mutate(diff_abs = abs(total_work_area_digital_ha - total_work_area_yb))
 
+View(combined_data_2020)
 
 
 # 🟥 export  ===================================================================================

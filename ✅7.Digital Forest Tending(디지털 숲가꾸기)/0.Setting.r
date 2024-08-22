@@ -1,4 +1,95 @@
-# rm(list=ls())
+# 필요한 패키지 설치 및 로드
+# install.packages("blandr")
+# install.packages("ggplot2")
+# install.packages("showtext")
+library(blandr)
+library(ggplot2)
+library(showtext)
+
+# 한글 폰트 설정
+font_add_google("Nanum Gothic", "nanumgothic")
+showtext_auto()
+bland_altman_with_ci_and_labels <- function(method1, method2, labels, title = "Bland-Altman Plot", threshold_factor = 2, sig.level = 0.95) {
+  
+  # Bland-Altman 통계 계산
+  stats <- blandr.statistics(method1, method2, sig.level = sig.level)
+  
+  # 통계 데이터프레임 생성
+  data <- data.frame(
+    means = stats$means,
+    differences = stats$differences,
+    labels = labels
+  )
+  
+  # 차이의 표준편차 계산
+  threshold <- threshold_factor * sd(data$differences)
+  
+  # outliers에 해당하는 점에만 레이블을 표시
+  data$labels_to_plot <- ifelse(abs(data$differences) > threshold, data$labels, "")
+  
+  # 신뢰구간 수동 계산
+  bias <- stats$bias
+  bias_se <- stats$biasSEM  # Bias의 표준오차
+  z_value <- qnorm(1 - (1 - sig.level) / 2)  # Z값 계산 (예: 95% 신뢰구간에 해당하는 z값)
+  
+  # Bias 신뢰구간
+  bias_upper_ci <- bias + z_value * bias_se
+  bias_lower_ci <- bias - z_value * bias_se
+  
+  # Limits of Agreement 신뢰구간 계산
+  loa_se <- stats$LOA_SEM  # Limits of Agreement의 표준오차
+  upper_loa_upper_ci <- stats$upperLOA + z_value * loa_se
+  upper_loa_lower_ci <- stats$upperLOA - z_value * loa_se
+  lower_loa_upper_ci <- stats$lowerLOA + z_value * loa_se
+  lower_loa_lower_ci <- stats$lowerLOA - z_value * loa_se
+  
+  # Bland-Altman plot 생성
+  p <- ggplot(data, aes(x = means, y = differences)) +
+    geom_point(size = 2) +
+    
+    # Bias Line 및 신뢰구간 음영
+    geom_hline(yintercept = bias, linetype = "solid", color = "red") +
+    geom_ribbon(aes(ymin = bias_lower_ci, ymax = bias_upper_ci), alpha = 0.2, fill = "red") +
+    
+    # Upper Limit of Agreement (Upper LoA) 및 신뢰구간 음영
+    geom_hline(yintercept = stats$upperLOA, linetype = "dashed", color = "blue") +
+    geom_ribbon(aes(ymin = upper_loa_lower_ci, ymax = upper_loa_upper_ci), alpha = 0.2, fill = "blue") +
+    
+    # Lower Limit of Agreement (Lower LoA) 및 신뢰구간 음영
+    geom_hline(yintercept = stats$lowerLOA, linetype = "dashed", color = "blue") +
+    geom_ribbon(aes(ymin = lower_loa_lower_ci, ymax = lower_loa_upper_ci), alpha = 0.2, fill = "blue") +
+    
+    # Outlier 레이블 추가
+    geom_text(aes(label = labels_to_plot), vjust = -1, size = 4, family = "nanumgothic") +  # 한글 폰트 적용
+    
+    # 제목 및 라벨
+    ggtitle(title) +  # 사용자가 지정한 제목 적용
+    xlab("Mean of Two Methods") +
+    ylab("Difference Between Two Methods") +
+    
+    # 폰트 및 글자 크기 설정
+    theme_minimal() +
+    theme(
+      text = element_text(family = "nanumgothic", size = 14),  # 기본 텍스트 크기
+      plot.title = element_text(size = 18, face = "bold"),  # 제목 크기 및 스타일
+      axis.title = element_text(size = 14),  # 축 제목 크기
+      axis.text = element_text(size = 12)    # 축 눈금 크기
+    )
+  
+  # Plot 출력
+  print(p)
+}
+
+# 플롯 생성 후 저장
+bland_altman_with_ci_and_labels(method1 = dig,
+                                method2 = yb, 
+                                labels = labels, 
+                                title = "Bland-Altman Plot with C.I. : 어린나무가꾸기")
+
+# 생성된 플롯을 파일로 저장
+ggsave(filename = file.path(path_save, "bland_altman_plot_young.png"), 
+       plot = last_plot(), 
+       width = 4, height = 5, dpi = 300, bg = "white")
 
 
 # 특정 문자열이 포함되지 않은 행들을 추출하는 함수
