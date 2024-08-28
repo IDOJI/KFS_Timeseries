@@ -2,12 +2,19 @@
 # rm(list = ls())
 ## 🟨Install and loading Packages ================================
 install_packages = function(packages, load=TRUE) {
-  # load : load the packages after installation?    if (!require(pkg, character.only = TRUE)) {
+  # packages : a vector of package names to install and load
+  # load : load the packages after installation?
+  
+  for(pkg in packages) {
+    # Check if the package is installed
+    if (!require(pkg, character.only = TRUE)) {
+      # If not installed, install the package
       install.packages(pkg)
     }
     
+    # If load is TRUE, load the package
     if(load){
-      library(pkg, character.only = TRUE, quietly = T)
+      library(pkg, character.only = TRUE, quietly = TRUE)
     }
   }
 }

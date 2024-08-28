@@ -1,3 +1,59 @@
+# 연속적인지 확인하는 함수 정의
+is_consecutive <- function(vec) {
+  # 입력 벡터에서 NA 값을 제거하고, 정렬
+  vec <- sort(na.omit(vec))
+  
+  # 최솟값과 최댓값 구하기
+  min_val <- min(vec)
+  max_val <- max(vec)
+  
+  # 최솟값에서 최댓값까지의 모든 값이 벡터에 있는지 확인
+  all(seq(min_val, max_val) %in% vec)
+}
+
+
+
+library(ggplot2)
+library(ggplot2)
+library(ggplot2)
+
+# 시계열 플롯을 그리는 함수 정의 (x축을 인덱스로 사용)
+plot_time_series <- function(values, labels, x_label = "Index", y_label = "Value", title = "Time Series Plot") {
+  # NA가 아닌 값이 나올 때까지 앞쪽의 NA 제거
+  non_na_start <- which(!is.na(values))[1]
+  
+  if (!is.na(non_na_start)) {
+    values <- values[non_na_start:length(values)]
+    labels <- labels[non_na_start:length(labels)]
+  }
+  
+  # 데이터 프레임으로 변환 (인덱스를 x축으로 사용)
+  data <- data.frame(
+    Index = 1:length(values),
+    Value = values,
+    Label = labels
+  )
+  
+  # ggplot을 사용한 시계열 플롯
+  p <- ggplot(data, aes(x = Index, y = Value, group = 1)) +
+    geom_line(color = "steelblue", size = 1) +  # 선 플롯
+    geom_point(color = "darkorange", size = 2) +  # 포인트 추가
+    scale_x_continuous(breaks = data$Index, labels = data$Label) +  # x축 레이블을 문자열로 설정
+    theme_minimal() +  # 깔끔한 테마
+    labs(x = x_label, y = y_label, title = title) +  # 레이블 및 제목 추가
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),  # 제목 스타일
+      axis.text.x = element_text(angle = 45, hjust = 1),  # X축 레이블 회전
+      axis.text.y = element_text(size = 12),
+      axis.title.x = element_text(size = 14, face = "bold"),
+      axis.title.y = element_text(size = 14, face = "bold")
+    )
+  
+  return(p)
+}
+
+
+
 library(dplyr)
 # rm(list=ls())
 # 비교 및 하이라이트 함수 정의

@@ -1,5 +1,5 @@
 # 🟥 Data Load #####################################################################################################
-file_path = "/Users/Ido/Documents/DataAnalysis/KFS_Timeseries/2.Rearrange YB names/1.rearranged_yb_names.csv"
+file_path = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/2.Rearrange YB names/1.rearranged_yb_names.csv"
 data = read.csv(file_path)
 # View(data)
 L2 = data$NAME_L2 %>% unique

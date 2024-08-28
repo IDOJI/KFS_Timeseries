@@ -1,3 +1,6 @@
+list.files("/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/숲가꾸기/숲 가꾸기Forest tending")
+
+
 # rm(list = ls())
 filter = dplyr::filter
 select = dplyr::select
@@ -919,6 +922,7 @@ treat_header = function(header,  ith_id){
   # dim(ith_hdr)
   # View(ith_hdr)
   # as.data.frame(ith_hdr)
+  # ith_id = "YRBK_00450409"
   ith_hdr <- header %>% 
     filter(ID == ith_id) %>% 
     remove_na_columns() %>%

@@ -1,9 +1,9 @@
 # 🟥 raw 데이터 정리(리스트화) #####################################################################################################
 ## 🟧 data load #####################################################################################################
-path_data = "/Users/Ido/Documents/DataAnalysis/KFS_Timeseries/0.Raw Data/DB_20240415/TB_NDI_MRV_STTST_YRBK_OF_FRSTR_DATA_20240415.xlsx"
+path_data = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/0.Raw Data/DB_20240415/TB_NDI_MRV_STTST_YRBK_OF_FRSTR_DATA_20240415.xlsx"
 data = read.xlsx(path_data)
 
-path_yb = "/Users/Ido/Documents/DataAnalysis/KFS_Timeseries/2.Rearrange YB names/4.Added YB ID.csv"
+path_yb = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/2.Rearrange YB names/4.Added YB ID.csv"
 yb = read.csv(path_yb)
 
 

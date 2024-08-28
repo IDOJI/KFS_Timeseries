@@ -78,6 +78,7 @@ for(i in 1:length(yb_id)){
   # i= 2989
   ### 🟩 extract ID =================================================================
   ith_id = yb_id[i]
+  # ith_id = "YRBK_00520408"
   # ith_id = error_id
   # ith_id = ID
   # ith_id = "YRBK_00200316"

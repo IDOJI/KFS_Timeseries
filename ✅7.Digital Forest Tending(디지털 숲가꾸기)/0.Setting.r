@@ -5,7 +5,7 @@
 library(blandr)
 library(ggplot2)
 library(showtext)
-
+# rm(list = ls())
 # 한글 폰트 설정
 font_add_google("Nanum Gothic", "nanumgothic")
 showtext_auto()
@@ -79,17 +79,6 @@ bland_altman_with_ci_and_labels <- function(method1, method2, labels, title = "B
   # Plot 출력
   print(p)
 }
-
-# 플롯 생성 후 저장
-bland_altman_with_ci_and_labels(method1 = dig,
-                                method2 = yb, 
-                                labels = labels, 
-                                title = "Bland-Altman Plot with C.I. : 어린나무가꾸기")
-
-# 생성된 플롯을 파일로 저장
-ggsave(filename = file.path(path_save, "bland_altman_plot_young.png"), 
-       plot = last_plot(), 
-       width = 4, height = 5, dpi = 300, bg = "white")
 
 
 # 특정 문자열이 포함되지 않은 행들을 추출하는 함수

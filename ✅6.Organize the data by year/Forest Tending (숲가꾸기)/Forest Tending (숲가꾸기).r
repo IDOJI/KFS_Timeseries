@@ -65,7 +65,7 @@ View(data_combined)
 
 
 # 🟦 연도 행만 추출====================================================================================
-data_combined_2 = filter_by_year(data_combined)
+data_combined_2 = filter_by_year(data_combined) %>% relocate(year, .after = 3)
 View(data_combined_2)
 data_combined_2$Classification %>% unique
 
@@ -321,7 +321,7 @@ data.list_new = list()
 ## 🌫️ 무육 -> 어린나무가꾸기 ==============================================================
 sub_1 = data.list_2$무육
 sub_2 = data.list_2$어린나무가꾸기_new
-
+View(data.list_2$무육)
 View(sub_1)
 View(sub_2)
 
@@ -452,7 +452,7 @@ View(combined)
 
 data.list_new[[new_name]] = combined
 
-
+data.list_new$큰나무가꾸기_경제림가꾸기_솎아베기 %>% View
 
 # 🟦 없는 연도 제거 ====================================================================================
 ## 🟩 메워심기 ==========================================================================
@@ -535,6 +535,10 @@ change_value_by_units <- function(df) {
   
   return(df)
 }
+
+
+
+
 
 
 
@@ -775,13 +779,13 @@ highlight_differences(data_final,
 
 
 
+test = read.csv("/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/숲가꾸기/exported_new/큰나무가꾸기_경제림가꾸기_솎아베기.csv")
+View(test)
 
 
-
-
-
-
-
+p = plot_time_series(values = test[[5]], labels = test[[3]])
+path_save = "/Users/Ido/Downloads"
+ggsave(file.path(path_save, "plot.png"), plot =  p , width = 10, height = 5, bg = "white")
 
 
 
