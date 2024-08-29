@@ -96,6 +96,8 @@ data.frame(colnames(df), colnames(data_colnames)) %>% View
 data_sum = df
 names(data_sum)
 
+
+
 # 열 이름 가져오기
 column_names <- names(data_sum)
 
@@ -121,7 +123,7 @@ data_sums <- data_sum %>%
 comparison <- data_sum %>%
   select(ID, 구분, year, ends_with("계_본수"), ends_with("계_면적")) %>%
   bind_cols(data_sums)
-
+View(comparison)
 # "계" 열과 비교 및 차이 열 생성
 comparison <- data_sum %>%
   select(ID, 구분, year, ends_with("합계_본수"), ends_with("합계_면적")) %>%
@@ -180,10 +182,23 @@ names(data_sum)
 
 
 
+### 🟨 면적 열 제외 ================================================================
+data_sum_2 = data_sum %>% select(-all_of(grep("면적", names(data_sum), value=T)))
+names(data_sum_2)
+
+
+
+### 🟨 =======================================================================
+data_sum_2 = data_sum_2 %>% 
+  relocate("침엽수_기타_본수", .after = 활엽수_합계_본수) %>% 
+  relocate("활엽수_기타_본수", .after = "침엽수_기타_본수")
+names(data_sum_2)
+
+
 ### 🟨 Export ================================================================
 path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/조림/수종별 조림실적Plantation forest by tree species/Combined"
 file_name = "3.Combined_00_직접입력.xlsx"
-write.xlsx(data_sum, file.path(path_save, file_name))
+write.xlsx(data_sum_2, file.path(path_save, file_name))
 # data_sum
 
 

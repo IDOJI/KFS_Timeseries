@@ -98,9 +98,6 @@ if (all_identical) {
 
 
 
-
-
-
 # 🟦 각 데이터프레임에서 연도 행만 남기기 =============================================================================================
 # 데이터프레임 리스트를 순회하며 작업 수행
 sapply(selected_data_list, function(x){
@@ -304,7 +301,7 @@ rows_with_year <- combined_data[has_year, ]
 # "본수"이라는 문자열을 포함하는 행 추출
 contains_area <- grepl("본수", rows_with_year[[2]])
 
-# 최종적으로 "면적"을 포함하는 행만 추출
+# 최종적으로 "본수"을 포함하는 행만 추출
 final_rows <- rows_with_year[contains_area, ]
 
 # 결과 출력
@@ -312,20 +309,28 @@ print(final_rows)
 View(final_rows)
 
 
+names(final_rows)
+final_rows %>% View
+final_rows[[2]]
 
+names(final_rows)
+
+final_rows <- final_rows %>%
+  mutate(구분 = substr(구분_1, 1, 4)) %>% 
+  relocate(구분, .before = 구분_1) %>% 
+  relocate(year, .after = "구분")
 
 
 
 # 🟪 열 이름 바꾸기 =============================================================================================
-names(final_rows)[2] = "구분"
-
 library(dplyr)
 library(stringr)
-
+View(final_rows)
 # 열 이름을 "_계"에서 "_본수_계"로 변경
 final_rows_2 <- final_rows %>%
   rename_with(~ str_replace_all(., "_계", "_본수_계")) %>% 
   rename_with(~ str_replace_all(., "계_", ""))
+View(final_rows_2)
 
 
 
@@ -361,28 +366,12 @@ final_rows_3 %>% View
 
 
 
-# 🟦 차이가 0인 연도들 =============================================================================================
-# 차이가 0인 연도들과 0이 아닌 연도들 추출
-zero_df = final_rows_3 %>% filter(Difference == 0)
-non_zero_df = final_rows_3 %>% filter(Difference != 0)
-View(non_zero_df)
-View(zero_df)
-non_zero_to_check_df = non_zero_df %>% filter(!구분 %in% zero_df$구분)
-View(non_zero_to_check_df)
-
-# -> 차이 별로 나 않고, 확인한 연보이므로 그대로 사용
-new_combined = rbind(zero_df, non_zero_to_check_df) %>% 
-  arrange(구분, year)
-View(new_combined)
-
-
-
-# 🟨 데이터 추출 ======================================================
+# 🟨 데이터 추출 =====================================================================
 # dplyr 패키지 로드
 library(dplyr)
 
 # "구분" 별로 "year" 값이 가장 큰 행만 남기기
-filtered_df <- new_combined %>%
+filtered_df <- final_rows_3 %>%
   group_by(구분) %>%
   filter(year == max(year)) %>%
   ungroup() %>% 
@@ -392,26 +381,77 @@ filtered_df <- new_combined %>%
 # 결과 확인
 print(filtered_df)
 filtered_df %>% View
-#
+
+# 연속형 연도인지 확인
+filtered_df$구분 %>% is_consecutive()
+
+# is_consecutive
 
 
-# 🟨 연속 연도만 남았는지 확인 ======================================================
-years = filtered_df[[2]] %>% as.numeric
 
-# 연도가 연속적인지 확인
-is_consecutive <- all(diff(years) == 1)
+# 🟩 전체 합계 차이 0이 아닌 데이터 =====================================================================
+filtered_df_2 = filtered_df %>% rename(classification := 구분)
 
-# 결과 출력
-if (is_consecutive) {
-  print("연도가 연속적입니다.")
-} else {
-  print("연도가 연속적이지 않습니다.")
-}
+## 1979
+filtered_df_2 %>% filter(classification == "1979")
+final_rows_3 %>% filter(구분 == "1979") %>% View
+
+
+
+## 1983
+filtered_df_2 %>% filter(Difference != 0) %>% pull(classification)
+y = "1983"
+filtered_df_2 %>% filter(classification == y) %>% View
+final_rows_3 %>% filter(구분 == y) %>% View
+
+filtered_df_2[filtered_df_2$classification == "1983",] = final_rows_3 %>% filter(구분 == y) %>% slice(5)
+
+
+
+## 1985
+filtered_df_2 %>% filter(Difference != 0) %>% pull(classification)
+y = "1985"
+filtered_df_2 %>% filter(classification == y) %>% View
+final_rows_3 %>% filter(구분 == y) %>% View
+
+filtered_df_2[filtered_df_2$classification == y,] = final_rows_3 %>% filter(구분 == y) %>% slice(5)
+
+
+
+
+## 1989
+filtered_df_2 %>% filter(Difference != 0) %>% pull(classification)
+y = "1989"
+filtered_df_2 %>% filter(classification == y) %>% View
+final_rows_3 %>% filter(구분 == y) %>% View
+filtered_df_2[filtered_df_2$classification == y,] = final_rows_3 %>% filter(구분 == y) %>% slice(4)
+View(filtered_df_2[filtered_df_2$classification == y,])
+
+
+## 1991
+filtered_df_2 %>% filter(Difference != 0) %>% pull(classification)
+y = "1991"
+filtered_df_2 %>% filter(classification == y) %>% View
+final_rows_3 %>% filter(구분 == y) %>% View
+filtered_df_2[filtered_df_2$classification == y,] = final_rows_3 %>% filter(구분 == y) %>% slice(5)
+View(filtered_df_2[filtered_df_2$classification == y,])
+
+
+## 1993
+filtered_df_2 %>% filter(Difference != 0) %>% pull(classification)
+y = "1993"
+filtered_df_2 %>% filter(classification == y) %>% View
+final_rows_3 %>% filter(구분 == y) %>% View
+# filtered_df_2[filtered_df_2$classification == y,] = final_rows_3 %>% filter(구분 == y) %>% slice(5)
+# View(filtered_df_2[filtered_df_2$classification == y,])
+
+
 
 
 
 # 🟨 활엽수 침엽수 ======================================================
-filtered_df %>% names
+filtered_df_2 %>% names
+filtered_df_2 %>% View
 library(dplyr)
 
 # 나무 이름 목록
@@ -422,29 +462,38 @@ coniferous_trees <- c("잣나무_본수_계", "낙엽송_본수_계", "삼나무
 leafy_trees <- c("밤나무_본수_계", "이태리포플러_본수_계", "현사시_본수_계", "오동_본수_계")
 
 # 열 이름 변경
-filtered_df <- filtered_df %>%
+filtered_df_3 <- filtered_df_2 %>%
   rename_with(~ ifelse(. %in% coniferous_trees, paste0("침엽수_", .), 
                        ifelse(. %in% leafy_trees, paste0("활엽수_", .), .)))
 
 # 결과 확인
-print(names(filtered_df))
+print(names(filtered_df_3))
 
-filtered_df = filtered_df %>% rename(본수_합계 = 본수_계)
+filtered_df_4 = filtered_df_3 %>% rename(본수_합계 = 본수_계)
 
 
 # 열 이름에서 "_계"를 제거하는 코드
-new_colnames <- gsub("_계$", "", colnames(filtered_df))
+new_colnames <- gsub("_계$", "", colnames(filtered_df_4))
 
 # 데이터프레임에 새로운 열 이름을 적용
-colnames(filtered_df) <- new_colnames
+colnames(filtered_df_4) <- new_colnames
 
 # 결과 확인
-print(colnames(filtered_df))
+print(colnames(filtered_df_4))
 
 
-# 🟨 Export ======================================================
+
+
+# 🟨  ======================================================================================
+filtered_df_5 = filtered_df_4 %>% 
+  relocate("기타_본수", .after = "본수_합계") %>% 
+  select(-Directly_Summed, -Difference)
+names(filtered_df_5)
+
+
+# 🟨 Export ======================================================================================
 path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/조림/수종별 조림실적Plantation forest by tree species/Combined"
-write.xlsx(filtered_df, file.path(path_save, "2.Combined_82~99_국유림민유림.xlsx"))
+write.xlsx(filtered_df_5, file.path(path_save, "2.Combined_82~99_국유림민유림.xlsx"))
 
 
 

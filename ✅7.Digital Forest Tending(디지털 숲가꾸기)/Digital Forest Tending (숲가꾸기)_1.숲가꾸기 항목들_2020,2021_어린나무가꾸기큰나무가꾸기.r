@@ -9,10 +9,15 @@ View(data_1)
 
 # 조림
 data_2 = read.xlsx(path_data_2)
-
+View(data_2)
+data_2[[1]] %>% unique
 # names(data_1)
+names(data_2)
 # 
 # View(data_1)
+# data_2$`PMS3A013_BSNS_GBN_NM(조림기능구분명)` %>% unique
+# data_1$`PMS3A011_COMPO_OBJ_NM(산림자원조성사업정보.조성목적명)` %>% unique
+
 
 # 🌫️ data1   ==============================================================================================
 ## 🟪 check  =======================================================================================
@@ -127,6 +132,9 @@ data_aggregated %>%
 data_aggregated_2021 = data_aggregated %>% filter(year == "2021")
 data_aggregated_2020 = data_aggregated %>% filter(year == "2020")
 data_aggregated$year
+data_aggregated_2021$year %>% unique
+data_aggregated_2020$year %>% unique
+
 
 
 
@@ -224,10 +232,27 @@ combined_data_2020 = combined_data_2020 %>%
 View(combined_data_2020)
 
 
+
+# 🟥 항목별  ===================================================================================
+results = list()
+results$tending_2021_young = combined_data_2021 %>% 
+  filter(forest_tending == "어린나무가꾸기")
+results$tending_2021_big = combined_data_2021 %>% 
+  filter(forest_tending == "큰나무가꾸기")
+results$tending_2020_young = combined_data_2020 %>% 
+  filter(forest_tending == "어린나무가꾸기")
+results$tending_2020_big = combined_data_2020 %>% 
+  filter(forest_tending == "큰나무가꾸기")
+
+
+
 # 🟥 export  ===================================================================================
-path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/5.디지털숲가꾸기/Exported_2"
-write.csv(combined_data_2020, file.path(path_save, "comparison 2020.csv"), row.names = F)
-write.csv(combined_data_2021, file.path(path_save, "comparison 2021.csv"), row.names = F)
+path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/5.디지털숲가꾸기/Exported"
+r = sapply(seq_along(results), function(i){
+  
+  write.csv(results[[i]], paste0(file.path(path_save, names(results)[i]), ".csv"), row.names = F)  
+  
+})
 
 
 

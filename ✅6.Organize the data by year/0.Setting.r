@@ -1,3 +1,114 @@
+# 중복된 열 이름을 확인하고 출력하는 함수 정의
+# 중복된 열 이름을 확인하고 출력하는 개선된 함수 정의
+check_duplicate_columns <- function(df) {
+  # 모든 열 이름 확인
+  col_names <- names(df)
+  
+  # 대소문자 구분 없이 중복된 열 확인
+  lower_col_names <- tolower(col_names)  # 대소문자 무시를 위해 소문자로 변환
+  duplicate_cols <- lower_col_names[duplicated(lower_col_names)]
+  
+  # 중복된 열이 있는지 확인하고 출력
+  if (length(duplicate_cols) > 0) {
+    # 중복된 열 이름 출력 (원본 열 이름으로)
+    actual_duplicate_names <- col_names[tolower(col_names) %in% duplicate_cols]
+    cat("중복된 열 이름이 있습니다:", paste(unique(actual_duplicate_names), collapse = ", "), "\n")
+  } else {
+    cat("중복된 열 이름이 없습니다.\n")
+  }
+}
+
+
+merge_columns <- function(df, col1, col2, new_col_name) {
+  # 두 열이 데이터프레임에 존재하는지 확인
+  if (!(col1 %in% names(df)) || !(col2 %in% names(df))) {
+    stop("지정한 열이 데이터프레임에 존재하지 않습니다.")
+  }
+  
+  # 새로운 열 생성 및 조건에 따른 값 할당
+  df[[new_col_name]] <- apply(df[, c(col1, col2)], 1, function(x) {
+    if (is.na(x[1]) && is.na(x[2])) {
+      return(NA)
+    } else if (is.na(x[1])) {
+      return(x[2])
+    } else if (is.na(x[2])) {
+      return(x[1])
+    } else if (x[1] == x[2]) {
+      return(x[1])
+    } else {
+      # 두 열의 값이 모두 NA가 아니고 값이 다른 경우 첫 번째 열의 값을 우선으로 사용하고 경고 출력
+      warning("두 열의 값이 모두 NA가 아니고 값이 다릅니다. 첫 번째 열의 값을 사용합니다.")
+      return(x[1]) # 또는 x[2]를 선택할 수도 있습니다.
+    }
+  })
+  
+  # 기존 열 삭제
+  df[[col1]] <- NULL
+  df[[col2]] <- NULL
+  
+  return(df)
+}
+
+# rm(list=ls())
+# 함수 정의
+compare_and_move_columns <- function(df) {
+  # "활엽수_"로 시작하는 열을 선택하고 합계를 구함
+  hardwood_cols <- grep("^활엽수_", names(df), value = TRUE)
+  df$`활엽수_합계_계산` <- rowSums(df[hardwood_cols], na.rm = TRUE)
+  
+  # "침엽수_"로 시작하는 열을 선택하고 합계를 구함
+  softwood_cols <- grep("^침엽수_", names(df), value = TRUE)
+  df$`침엽수_합계_계산` <- rowSums(df[softwood_cols], na.rm = TRUE)
+  
+  # "#___활엽수_합계_본수" 뒤에 합계 열을 이동
+  hardwood_sum_col_index <- which(names(df) == "#___활엽수_합계_본수")
+  df <- df[c(names(df)[1:hardwood_sum_col_index], "활엽수_합계_계산", names(df)[(hardwood_sum_col_index + 1):length(df)])]
+  
+  # "#___침엽수_합계_본수" 뒤에 합계 열을 이동
+  softwood_sum_col_index <- which(names(df) == "#___침엽수_합계_본수")
+  df <- df[c(names(df)[1:softwood_sum_col_index], "침엽수_합계_계산", names(df)[(softwood_sum_col_index + 1):length(df)])]
+  
+  # "활엽수"와 "침엽수" 각각의 차이를 구하고 절댓값 열을 생성
+  df$`활엽수_차이_절대값` <- abs(df$`활엽수_합계_계산` - df$`#___활엽수_합계_본수`)
+  df$`침엽수_차이_절대값` <- abs(df$`침엽수_합계_계산` - df$`#___침엽수_합계_본수`)
+  
+  # "#___활엽수_합계_본수" 뒤에 차이 절대값 열을 이동
+  df <- df[c(names(df)[1:(hardwood_sum_col_index + 2)], "활엽수_차이_절대값", names(df)[(hardwood_sum_col_index + 3):length(df)])]
+  
+  # "#___침엽수_합계_본수" 뒤에 차이 절대값 열을 이동
+  df <- df[c(names(df)[1:(softwood_sum_col_index + 2)], "침엽수_차이_절대값", names(df)[(softwood_sum_col_index + 3):length(df)])]
+  
+  return(df)
+}
+
+
+remove_duplicate_columns <- function(df) {
+  # 데이터프레임의 모든 열 이름 확인
+  col_names <- names(df)
+  
+  # 삭제할 열의 인덱스를 저장할 벡터
+  cols_to_remove <- c()
+  
+  # 열 이름의 조합을 통해 중복 검사
+  for (i in 1:(length(col_names) - 1)) {
+    for (j in (i + 1):length(col_names)) {
+      # 두 열의 이름이 같고, 값도 모두 동일한지 확인
+      if (col_names[i] == col_names[j] && all(df[[i]] == df[[j]], na.rm = TRUE)) {
+        # 삭제할 열로 가장 뒤에 있는 열(j) 추가
+        cols_to_remove <- c(cols_to_remove, j)
+      }
+    }
+  }
+  
+  # 중복된 열 삭제
+  if (length(cols_to_remove) > 0) {
+    df <- df[, -unique(cols_to_remove), drop = FALSE]
+  }
+  
+  return(df)
+}
+
+
 # 연속적인지 확인하는 함수 정의
 is_consecutive <- function(vec) {
   # 입력 벡터에서 NA 값을 제거하고, 정렬
@@ -2401,7 +2512,6 @@ each_year_total_copy_data_by_year_by_max_value_rows = function(yb,
 
 
 ## 🟧 리스트 2개 비교 =============================================================
-# 두 개의 리스트를 비교하여 길이와 원소 이름이 동일한지 확인하는 함수
 # 두 개의 리스트를 비교하여 길이와 원소 이름이 동일한지 확인하는 함수
 library(crayon)
 

@@ -1,3 +1,80 @@
+new_regions = function(data){
+  data %>%
+    mutate(regions = case_when(
+      grepl("경기도", `GROUP_FIELD(필지)`) ~ "경기도",
+      grepl("경상남도", `GROUP_FIELD(필지)`) ~ "경상남도",
+      grepl("충청남도", `GROUP_FIELD(필지)`) ~ "충청남도",
+      grepl("전라남도", `GROUP_FIELD(필지)`) ~ "전라남도",
+      grepl("충청북도", `GROUP_FIELD(필지)`) ~ "충청북도",
+      grepl("경상북도", `GROUP_FIELD(필지)`) ~ "경상북도",
+      grepl("대전광역시", `GROUP_FIELD(필지)`) ~ "대전광역시",
+      grepl("전라북도", `GROUP_FIELD(필지)`) ~ "전라북도",
+      grepl("강원도", `GROUP_FIELD(필지)`) ~ "강원도",
+      grepl("강원특별자치도", `GROUP_FIELD(필지)`) ~ "강원도",
+      grepl("울산광역시", `GROUP_FIELD(필지)`) ~ "울산광역시",
+      grepl("서울특별시", `GROUP_FIELD(필지)`) ~ "서울특별시",
+      grepl("부산광역시", `GROUP_FIELD(필지)`) ~ "부산광역시",
+      grepl("인천광역시", `GROUP_FIELD(필지)`) ~ "인천광역시",
+      grepl("제주특별자치도", `GROUP_FIELD(필지)`) ~ "제주특별자치도",
+      grepl("대구광역시", `GROUP_FIELD(필지)`) ~ "대구광역시",
+      grepl("광주광역시", `GROUP_FIELD(필지)`) ~ "광주광역시",
+      grepl("세종특별자치시", `GROUP_FIELD(필지)`) ~ "세종특별자치시",
+      TRUE ~ "기타"
+    )) %>% 
+    relocate(regions, .after = year)
+}
+
+
+BA_test = function(data, path_save, file_name, title){
+  require(blandr)
+  # data :  ha
+  dig = data$total_work_area_digital_ha
+  yb = data$total_work_area_yb
+  
+  
+  
+  # data %>% View
+  # Perform Bland-Altman analysis and display the statistics
+  stats <- blandr.statistics(dig, yb)
+  
+  
+  # Display a Bland-Altman plot
+  blandr::blandr.display.and.draw(method1 = dig,
+                                  method2 = yb, 
+                                  method1name = "Digital", 
+                                  method2name = "YearBook", 
+                                  sig.level = 0.95, 
+                                  annotate = T, 
+                                  ciDisplay = T)
+  
+  
+  
+  # Plot using ggplot2
+  blandr.plot.ggplot(stats)
+  
+  
+  
+  
+  
+  # my function
+  labels = paste(data$regions, 
+                 data$year,
+                 sep = "_")
+  
+  bland_altman_with_ci_and_labels(method1 = dig,
+                                  method2 = yb, 
+                                  labels = labels, 
+                                  title = paste0("Bland-Altman Plot with C.I. : ", title))
+  
+  
+  # 생성된 플롯을 파일로 저장
+  ggsave(filename = file.path(path_save, file_name), 
+         plot = last_plot(), 
+         width = 4, height = 5, dpi = 300, bg = "white")
+  
+}
+
+
 # 필요한 패키지 설치 및 로드
 # install.packages("blandr")
 # install.packages("ggplot2")

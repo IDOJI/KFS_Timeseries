@@ -194,7 +194,7 @@ names_broadleaf = sapply(broadleaf.list_2, function(x){
   names(x)[3:20]
 })
 
-View(names_broadleaf)
+# View(names_broadleaf)
 
 sapply(broadleaf.list_2, names)
 
@@ -352,7 +352,7 @@ conifer.df = bind_rows(conifer.list_3)
 names(conifer.df)
 conifer.df = conifer.df %>% relocate(contains("해송"), .after = 20) %>% relocate(Categorized_L3_New, .before = Categorized_L3)
 names(conifer.df)
-
+# View(conifer.df)
 
 
 
@@ -371,8 +371,8 @@ broadleaf.df <- broadleaf.df %>%
 
 
 
-conifer.df  = conifer.df %>% arrange(구분, year)
-View(conifer.df)
+conifer.df  = conifer.df %>% arrange(구분, year) %>% relocate(year, .after = "구분")
+# View(conifer.df)
 
 
 
@@ -424,7 +424,7 @@ conifer.df <- compare_columns_area(conifer.df)
 
 # 결과 확인
 print(conifer.df)
-View(conifer.df)
+# View(conifer.df)
 names(conifer.df)
 
 library(dplyr)
@@ -484,11 +484,12 @@ broadleaf.df <- compare_columns_broadleaf(broadleaf.df)
 broadleaf.df <- compare_columns_area_broadleaf(broadleaf.df)
 
 # 결과 확인
-View(broadleaf.df)
+# View(broadleaf.df)
 names(broadleaf.df)
 
 broadleaf.df = broadleaf.df %>% 
   rename_with(~ paste0("활엽수_", .), c("총_면적", "면적_차이", "총_본수", "본수_차이"))
+
 
 # 🟪 활엽수 침엽수 합치기 ======================================================================================
 names(broadleaf.df)
@@ -502,6 +503,8 @@ combined_data.df = cbind(conifer.df[1:25],
   relocate(year, .after = "구분")
 
 
+
+# View(combined_data.df)
 
 
 # 🟪 하나의 행만 추출 ======================================================================================
@@ -523,7 +526,7 @@ remove_duplicates <- function(df) {
 combined_data.df_2 <- remove_duplicates(combined_data.df)
 
 # 결과 확인
-View(combined_data.df_2)
+# View(combined_data.df_2)
 
 
 # 🟥 계 열이름 변경 ======================================================================================
@@ -535,10 +538,23 @@ colnames(combined_data.df_2) <- gsub("_계_", "_합계_", colnames(combined_data
 # 결과 확인
 print(colnames(combined_data.df_2))
 
+
+
+# 🟥 면적 제외 ======================================================================================
+combined_data.df_3 = combined_data.df_2 %>% 
+  select(-all_of(grep("면적", names(combined_data.df_2), value = T))) %>% 
+  select(-침엽수_총_본수, -침엽수_본수_차이, -활엽수_총_본수, -활엽수_본수_차이) %>% 
+  relocate(활엽수_합계_본수, .after = 침엽수_합계_본수) %>% 
+  relocate(침엽수_기타_본수, .after = 활엽수_합계_본수) %>% 
+  relocate(활엽수_기타_본수, .after = 침엽수_기타_본수)
+# View(combined_data.df_3 )
+names(combined_data.df_3)
+
+
 # 🟥 Export ======================================================================================
 path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/조림/수종별 조림실적Plantation forest by tree species/Combined"
 file_name = "4.Combined_04~22"
-write.xlsx(combined_data.df_2, file.path(path_save, paste0(file_name, ".xlsx")))
+write.xlsx(combined_data.df_3, file.path(path_save, paste0(file_name, ".xlsx")))
 
 
 

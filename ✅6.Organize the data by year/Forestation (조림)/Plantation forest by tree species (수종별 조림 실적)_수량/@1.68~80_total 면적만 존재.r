@@ -394,9 +394,19 @@ print(names(zero_df))
 
 View(zero_df)
 
+
+
+# 🟥 새로 만든 열 제외 ======================================================
+names(zero_df)
+zero_df_2 <- zero_df %>% 
+  select(-합계_수량_New, -Diff) %>% 
+  relocate(기타_본수, .after = "합계_수량")
+View(zero_df_2)
+
+
 # 🟥 연도 행만 추출  ======================================================
 path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/조림/수종별 조림실적Plantation forest by tree species/Combined"
-write.xlsx(zero_df, file.path(path_save, "1.Combined_68~80.xlsx"))
+write.xlsx(zero_df_2, file.path(path_save, "1.Combined_68~80.xlsx"))
 # year_rows$year
 
 
