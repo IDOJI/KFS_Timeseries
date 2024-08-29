@@ -83,7 +83,7 @@ data_aggregated <- data_combined %>%
   summarise(total_work_area = sum(work_area, na.rm = TRUE)) %>%
   ungroup()
 
-
+# data_combined %>% filter(regions == "강원도" & year == "2019") %>% pull(3) %>% sum
 
 # 결과 확인
 data_aggregated %>% View
@@ -92,51 +92,69 @@ data_aggregated %>% View
 
 ## 🟦 연보데이터 추출  =======================================================================================
 ### 🟧 데이터 로드 ===================================================================================
-# 2019년도 데이터 -> 2020 연보를 의미
-path_yb_2019 = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/숲가꾸기/숲 가꾸기Forest tending/2020_YRBK_00500409.csv"
-yb_2019 = read.csv(path_yb_2019) %>% relocate(year, .after = 3)
-View(yb_2019)
+# 2019 데이터 -> 2020 연보
+path_2019_1 = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/조림/수종별 조림실적Plantation forest by tree species/5.04~23_활엽수, 침엽수/2020_YRBK_0050040601.csv"
+path_2019_2 = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/조림/수종별 조림실적Plantation forest by tree species/5.04~23_활엽수, 침엽수/2020_YRBK_0050040602.csv"
+data_2019_1 = read.csv(path_2019_1) %>% select(1:4)
+data_2019_2 = read.csv(path_2019_2) %>% select(1:4)
+
+
+# 2020 데이터 -> 2021 연보
+path_2020_1 = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/조림/수종별 조림실적Plantation forest by tree species/5.04~23_활엽수, 침엽수/2021_YRBK_0051040601.csv"
+path_2020_2 = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/조림/수종별 조림실적Plantation forest by tree species/5.04~23_활엽수, 침엽수/2021_YRBK_0051040602.csv"
+data_2020_1 = read.csv(path_2020_1) %>% select(1:4)
+data_2020_2 = read.csv(path_2020_2) %>% select(1:4)
+
+# 2021 데이터 -> 2022 연보
+path_2021_1 = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/조림/수종별 조림실적Plantation forest by tree species/5.04~23_활엽수, 침엽수/2022_YRBK_0052040501.csv"
+path_2021_2 = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/조림/수종별 조림실적Plantation forest by tree species/5.04~23_활엽수, 침엽수/2022_YRBK_0052040502.csv"
+data_2021_1 = read.csv(path_2021_1) %>% select(1:4)
+data_2021_2 = read.csv(path_2021_2) %>% select(1:4)
 
 
 
 
+### 🟧 합계 면적 ===================================================================================
+names(data_2019_1)
+names(data_2019_2)
+names(data_2020_1)
+names(data_2020_2)
+names(data_2021_1)
+names(data_2021_2)
 
-### 🟧 Check names ===================================================================================
-# names(yb_2019)
-names(yb_2019)[3] = "classification"
-names(yb_2019)[6] = "조림지가꾸기"
-names(yb_2019)[9] = "어린나무가꾸기"
-names(yb_2019)[10] = "큰나무가꾸기"
+data_2019 = data_2019_1 %>% 
+  mutate(year = "2019")
+data_2019[[4]] = data_2019_1[[4]] + data_2019_2[[4]]
+names(data_2019)[3] = "regions"
+names(data_2019)[4] = "yb_area"
+
+data_2020 = data_2020_1 %>% 
+  mutate(year = "2020")
+data_2020[[4]] = data_2020_1[[4]] + data_2020_2[[4]]
+names(data_2020)[3] = "regions"
+names(data_2020)[4] = "yb_area"
+
+
+data_2021 = data_2021_1 %>% 
+  mutate(year = "2021")
+data_2021[[4]] = data_2021_1[[4]] + data_2021_2[[4]]
+names(data_2021)[3] = "regions"
+names(data_2021)[4] = "yb_area"
+
+
+### 🟧 데이터 합치기 ===================================================================================
+combined_data = list(data_2019, data_2020, data_2021) %>% bind_rows
+View(combined_data )
+
+
 
 
 ### 🟧 Extract data ===================================================================================
-yb_2019_sub = yb_2019 %>% 
-  select(classification, 조림지가꾸기, 어린나무가꾸기, 큰나무가꾸기) %>% 
-  filter(classification %in% data_aggregated$regions)
-View(yb_2019_sub)
-
-
-### 🟧 데이터재구성 ===================================================================================
-yb_2019_sub %>% head
-
-# 데이터 변환 함수
-transform_data <- function(data, year_value) {
-  data %>%
-    pivot_longer(cols = c("조림지가꾸기", "어린나무가꾸기", "큰나무가꾸기"),
-                 names_to = "forest_tending",
-                 values_to = "total_work_area") %>%
-    rename(regions = classification) %>%
-    select(regions, forest_tending, total_work_area)
-}
-
-yb_2019_sub_2 = transform_data(yb_2019_sub)
-
-
-
-
-# 🟥 지역이름 비교  ===================================================================================
-sum(yb_2019_sub_2$regions %in% data_aggregated$regions) == nrow(yb_2019_sub_2)
-sum(data_aggregated$regions %in% yb_2019_sub_2$regions) == nrow(data_aggregated)
+combined_data_2 = combined_data %>% 
+  filter(regions %in% data_aggregated$regions) %>% 
+  select(-2) %>% 
+  select(-1) %>% 
+  relocate(year)
 
 
 
@@ -144,51 +162,34 @@ sum(data_aggregated$regions %in% yb_2019_sub_2$regions) == nrow(data_aggregated)
 # 🟥 데이터 합치기  ===================================================================================
 # 데이터 체크
 data_aggregated
-yb_2019_sub_2
+combined_data_2
 
 names(data_aggregated)
-names(yb_2019_sub_2)
+names(combined_data_2)
 
 # 두 데이터프레임 병합 (regions와 forest_tending을 기준으로)
-combined_data_2019 <- left_join(data_aggregated, yb_2019_sub_2,
-                                by = c("regions", "forest_tending"), 
-                                suffix = c("_digital", "_yb")) %>% 
-  filter(forest_tending %in% c("큰나무가꾸기", "어린나무가꾸기"))
+combined_data_new <- left_join(data_aggregated, combined_data_2,
+                                by = c("regions", "year"), 
+                                suffix = c("_digital", "_yb"))
+View(combined_data_new )
 
+names(combined_data_2)
 
 
 # 🟥 ha로  unit 바꾸기  ===================================================================================
-combined_data_2019 = combined_data_2019 %>% 
+combined_data_new_2 = combined_data_new %>% 
+  rename(total_work_area_digital = total_work_area) %>% 
+  rename(total_work_area_yb = yb_area) %>% 
   mutate(total_work_area_digital_ha = total_work_area_digital / 10000) %>% 
   mutate(diff_abs = abs(total_work_area_digital_ha - total_work_area_yb))
 
-View(combined_data_2019)
-data_aggregated %>% filter(regions == "강원도")
-yb_2019_sub_2 %>% filter(regions == "강원도")
-yb_2019 %>% filter(classification == "강원도") %>% View
-
-combined_data_2019$regions %>% table
 
 
-
-
-# 🟥 항목별  ===================================================================================
-results = list()
-results$tending_2019_young = combined_data_2019 %>% 
-  filter(forest_tending == "어린나무가꾸기")
-results$tending_2019_big = combined_data_2019 %>% 
-  filter(forest_tending == "큰나무가꾸기")
-# results$tending_2019_young %>% filter(regions == "인천광역시")
 
 
 # 🟥 export  ===================================================================================
 path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/5.디지털숲가꾸기/Exported"
-r = sapply(seq_along(results), function(i){
-  
-  write.csv(results[[i]], paste0(file.path(path_save, names(results)[i]), ".csv"), row.names = F)  
-  
-})
-
+write.csv(combined_data_new_2, paste0(file.path(path_save, "forestation_area"), ".csv"), row.names = F)
 
 
 

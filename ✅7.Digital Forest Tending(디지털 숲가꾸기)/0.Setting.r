@@ -1,3 +1,5 @@
+# rm(list=ls())
+
 new_regions = function(data){
   data %>%
     mutate(regions = case_when(
@@ -26,10 +28,18 @@ new_regions = function(data){
 
 
 BA_test = function(data, path_save, file_name, title){
+  replace_na_with_zero <- function(vec) {
+    # NA 값을 0으로 변환
+    vec[is.na(vec)] <- 0
+    return(vec)
+  }
+  
   require(blandr)
+  names(data_forest)
   # data :  ha
-  dig = data$total_work_area_digital_ha
-  yb = data$total_work_area_yb
+  # data =data_forest
+  dig = data$total_work_area_digital_ha %>% replace_na_with_zero 
+  yb = data$total_work_area_yb %>% replace_na_with_zero 
   
   
   
@@ -86,7 +96,7 @@ library(showtext)
 # 한글 폰트 설정
 font_add_google("Nanum Gothic", "nanumgothic")
 showtext_auto()
-bland_altman_with_ci_and_labels <- function(method1, method2, labels, title = "Bland-Altman Plot", threshold_factor = 2, sig.level = 0.95) {
+bland_altman_with_ci_and_labels <- function(method1, method2, labels, title = "Bland-Altman Plot", sig.level = 0.95) {
   
   # Bland-Altman 통계 계산
   stats <- blandr.statistics(method1, method2, sig.level = sig.level)
@@ -98,11 +108,12 @@ bland_altman_with_ci_and_labels <- function(method1, method2, labels, title = "B
     labels = labels
   )
   
-  # 차이의 표준편차 계산
-  threshold <- threshold_factor * sd(data$differences)
+  # Upper LoA와 Lower LoA 값 설정
+  upper_loa <- stats$upperLOA
+  lower_loa <- stats$lowerLOA
   
-  # outliers에 해당하는 점에만 레이블을 표시
-  data$labels_to_plot <- ifelse(abs(data$differences) > threshold, data$labels, "")
+  # Upper LoA와 Lower LoA 사이에 있지 않은 점에만 레이블을 표시
+  data$labels_to_plot <- ifelse(data$differences > upper_loa | data$differences < lower_loa, data$labels, "")
   
   # 신뢰구간 수동 계산
   bias <- stats$bias
@@ -115,10 +126,10 @@ bland_altman_with_ci_and_labels <- function(method1, method2, labels, title = "B
   
   # Limits of Agreement 신뢰구간 계산
   loa_se <- stats$LOA_SEM  # Limits of Agreement의 표준오차
-  upper_loa_upper_ci <- stats$upperLOA + z_value * loa_se
-  upper_loa_lower_ci <- stats$upperLOA - z_value * loa_se
-  lower_loa_upper_ci <- stats$lowerLOA + z_value * loa_se
-  lower_loa_lower_ci <- stats$lowerLOA - z_value * loa_se
+  upper_loa_upper_ci <- upper_loa + z_value * loa_se
+  upper_loa_lower_ci <- upper_loa - z_value * loa_se
+  lower_loa_upper_ci <- lower_loa + z_value * loa_se
+  lower_loa_lower_ci <- lower_loa - z_value * loa_se
   
   # Bland-Altman plot 생성
   p <- ggplot(data, aes(x = means, y = differences)) +
@@ -129,11 +140,11 @@ bland_altman_with_ci_and_labels <- function(method1, method2, labels, title = "B
     geom_ribbon(aes(ymin = bias_lower_ci, ymax = bias_upper_ci), alpha = 0.2, fill = "red") +
     
     # Upper Limit of Agreement (Upper LoA) 및 신뢰구간 음영
-    geom_hline(yintercept = stats$upperLOA, linetype = "dashed", color = "blue") +
+    geom_hline(yintercept = upper_loa, linetype = "dashed", color = "blue") +
     geom_ribbon(aes(ymin = upper_loa_lower_ci, ymax = upper_loa_upper_ci), alpha = 0.2, fill = "blue") +
     
     # Lower Limit of Agreement (Lower LoA) 및 신뢰구간 음영
-    geom_hline(yintercept = stats$lowerLOA, linetype = "dashed", color = "blue") +
+    geom_hline(yintercept = lower_loa, linetype = "dashed", color = "blue") +
     geom_ribbon(aes(ymin = lower_loa_lower_ci, ymax = lower_loa_upper_ci), alpha = 0.2, fill = "blue") +
     
     # Outlier 레이블 추가
