@@ -701,78 +701,76 @@ for(i in seq_along(data.list_processed)){
 
 
 
-# 🟩 최종데이터랑 합치기 ====================================================================================
-data_final = read.xlsx("/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/7.최종데이터/data1.xlsx")
-View(data_final)
-
-
-
-
-## 🟨 어린나무 ======================================================================
-data.list_processed$어린나무가꾸기[[5]]
-data_final$youtending_new = data.list_processed$어린나무가꾸기[[5]]
-
-comp_1 = data.frame(new = data.list_processed$어린나무가꾸기[[5]],
-                    old = data_final$youtending)
-
-
-
-
-## 🟨 솎아베기 ======================================================================
-data_final$thinning
-View(data.list_processed$큰나무가꾸기_경제림가꾸기_솎아베기)
-data.list_processed$큰나무가꾸기_경제림가꾸기_솎아베기[[5]]
-data_final$thinning_new = data.list_processed$큰나무가꾸기_경제림가꾸기_솎아베기[[5]]
-
-
-
-## 🟨 천연림보육 ======================================================================
-data_final %>% View
-data_final$thinning
-View(data.list_processed$큰나무가꾸기_경제림가꾸기_솎아베기)
-data.list_processed$큰나무가꾸기_경제림가꾸기_천연림보육[[5]]
-data_final$nattending_new = data.list_processed$큰나무가꾸기_경제림가꾸기_천연림보육[[5]]
-
-
-## 🟨 공익림가꾸기 ======================================================================
-data_final %>% View
-View(data.list_processed$큰나무가꾸기_공익림가꾸기)
-data.list_processed$큰나무가꾸기_공익림가꾸기[[5]]
-data_final$pubint_tending_new = data.list_processed$큰나무가꾸기_공익림가꾸기[[5]]
 
 
 
 
 
-## 🟧 NA를 0으로 ======================================================================
-data_final <- data_final %>%
-  mutate_all(~replace(., is.na(.), 0))
-class(data_final)
-
-
-## 🟨 bigtending ======================================================================
-data_final = data_final %>% 
-  mutate(bigtending_new = pubint_tending_new + nattending_new + youtending_new)
-
-View(data_final)
 
 
 
-## 🟦 열들 비교 ======================================================================
-path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/7.최종데이터"
-names(data_final)
-class(data_final)
-names(data_final)
-highlight_differences(data_final, 
-                      col_1 = c("youtending", 
-                                "thinning", 
-                                "nattending"), 
-                      col_2 = c("youtending_new", 
-                                "thinning_new", 
-                                "nattending_new"),
-                      path_save,
-                      "comparison.xlsx")
 
+
+
+
+
+# 🟩 데이터 합치기 ====================================================================================
+# data_final = read.xlsx("/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/7.최종데이터/data1.xlsx")
+# View(data_final)
+path_data ="/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/숲가꾸기/exported_new"
+
+data.list_processed = lapply(list.files(path_data, full.names = T), read.csv) %>% setNames(list.files(path_data) %>% gsub("\\.csv$", "", .))
+names(data.list_processed )
+names(data.list_processed) <- c(
+  "매워심기", 
+  "비료주기", 
+  "어린나무가꾸기", 
+  "조림지가꾸기_덩굴제거", 
+  "조림지가꾸기_풀베기", 
+  "큰나무가꾸기_경제림가꾸기_솎아베기", 
+  "큰나무가꾸기_경제림가꾸기_천연림보육", 
+  "큰나무가꾸기_공익림가꾸기"
+)
+
+# data.list_processed[[3]] %>% View
+
+
+## 🟨 데이터 합치기 ======================================================================
+combined_data = data.list_processed %>% lapply(function(x){
+  x[[5]]
+}) %>% 
+  do.call(cbind, .) %>% 
+  cbind(year = data.list_processed[[1]][["Classification"]], .) %>% 
+  as_tibble %>% 
+  mutate_all(~replace(., is.na(.), 0)) # NA  -> 0
+
+# View(combined_data)
+
+## 🟨 rename ======================================================================
+
+## 🟨 Export ======================================================================
+path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/숲가꾸기/exported_new"
+file_name = "foresttending_combined.xlsx"
+file_path = file.path(path_save, file_name)
+write.xlsx(combined_data, file_path)
+
+# 
+# 
+# ## 🟦 열들 비교 ======================================================================
+# path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/7.최종데이터"
+# names(data_final)
+# class(data_final)
+# names(data_final)
+# highlight_differences(data_final, 
+#                       col_1 = c("youtending", 
+#                                 "thinning", 
+#                                 "nattending"), 
+#                       col_2 = c("youtending_new", 
+#                                 "thinning_new", 
+#                                 "nattending_new"),
+#                       path_save,
+#                       "comparison.xlsx")
+# 
 
 
 

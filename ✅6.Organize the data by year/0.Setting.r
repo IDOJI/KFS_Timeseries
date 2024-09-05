@@ -1,3 +1,129 @@
+# rm(list=ls())
+combine_data_by_col <- function(data) {
+  # 1~3번째 열 추출 (NA가 아닌 첫 번째 값만 유지)
+  # data = data_2
+  first_three_cols <- data[, 1:3]
+  first_row <- apply(first_three_cols, 2, function(x) x[!is.na(x)][1]) %>% 
+    matrix() %>% 
+    t() %>% 
+    data.frame() %>% 
+    setNames(names(first_three_cols))
+  
+  
+  # 나머지 열들에 대해서 NA를 제외하고 합계를 계산
+  remaining_cols <- data[, -c(1:3)]
+  col_sums <- colSums(remaining_cols, na.rm = TRUE) %>% 
+    matrix %>% 
+    t %>% 
+    data.frame %>% 
+    setNames(names(remaining_cols))
+    
+  
+  
+  # 결과를 결합하여 하나의 데이터 프레임으로 변환
+  result <- cbind(first_row, col_sums)
+  
+  
+  
+  return(result)
+}
+
+
+
+# rm(list=ls())
+
+find_missing_years <- function(year_vector) {
+  # 문자열을 정수로 변환
+  year_vector <- as.numeric(year_vector)
+  
+  # 벡터의 최소와 최대 연도 구하기
+  min_year <- min(year_vector, na.rm = TRUE)
+  max_year <- max(year_vector, na.rm = TRUE)
+  
+  # 전체 연도 범위 생성
+  complete_years <- seq(min_year, max_year)
+  
+  # 누락된 연도 찾기
+  missing_years <- setdiff(complete_years, year_vector)
+  
+  # 결과 반환
+  if (length(missing_years) == 0) {
+    return("No missing years.")
+  } else {
+    return(missing_years)
+  }
+}
+
+
+check_unique_column <- function(data, column_name) {
+  # 열이 데이터 프레임에 있는지 확인
+  if (!(column_name %in% colnames(data))) {
+    stop("Error: Specified column does not exist in the data frame.")
+  }
+  
+  # 해당 열의 값을 추출
+  column_values <- data[[column_name]]
+  
+  # 고유하지 않은 값들을 찾기
+  duplicated_values <- unique(column_values[duplicated(column_values)])
+  
+  # 고유하지 않은 값이 있는지 확인
+  if (length(duplicated_values) == 0) {
+    return(paste("All values in the column '", column_name, "' are unique.", sep = ""))
+  } else {
+    return(list(
+      message = paste("The column '", column_name, "' has non-unique values.", sep = ""),
+      non_unique_values = duplicated_values
+    ))
+  }
+}
+
+# rm(list=ls())
+select = dplyr::select
+filter = dplyr::filter
+
+extract_columns_by_include_exclude_keywords <- function(df, exclude_keywords = NULL, include_keywords = NULL) {
+  # 1. 열 이름 검색하여 제외할 열들을 선택
+  if (!is.null(exclude_keywords)) {
+    excluded_columns <- unlist(lapply(exclude_keywords, function(keyword) {
+      grep(keyword, colnames(df), value = TRUE)
+    }))
+  } else {
+    excluded_columns <- character(0)  # 제외할 키워드가 없는 경우 빈 벡터
+  }
+    
+  # 2. 열 이름 검색하여 포함할 열들을 선택
+  if (!is.null(include_keywords)) {
+    included_columns <- unlist(lapply(include_keywords, function(keyword) {
+      grep(keyword, colnames(df), value = TRUE)
+    }))
+  } else {
+    included_columns <- colnames(df)  # 포함할 키워드가 없는 경우 모든 열 포함
+  }
+  
+  # 3. 포함할 열들 중에서 제외할 열들을 제거
+  selected_columns <- setdiff(included_columns, excluded_columns)
+  
+  # 4. 선택된 열들만 포함하는 데이터프레임 추출
+  result_df <- df[, selected_columns, drop = FALSE]
+  
+  return(result_df)
+}
+
+extract_columns_by_keywords <- function(df, keywords) {
+  # 입력한 키워드 순서대로 열 이름을 검색하여 선택
+  selected_columns <- unlist(lapply(keywords, function(keyword) {
+    grep(keyword, colnames(df), value = TRUE)
+  }))
+  
+  # 해당 열들만 포함하는 데이터프레임 추출 (입력한 순서대로)
+  result_df <- df[, selected_columns, drop = FALSE]
+  
+  return(result_df)
+}
+
+
+
 # 중복된 열 이름을 확인하고 출력하는 함수 정의
 # 중복된 열 이름을 확인하고 출력하는 개선된 함수 정의
 check_duplicate_columns <- function(df) {
@@ -611,20 +737,6 @@ rearrange_columns <- function(df) {
 
 library(dplyr)
 
-# 두 열을 합치는 함수 정의
-merge_columns <- function(df, col1, col2, new_col_name) {
-  df <- df %>%
-    mutate(
-      !!new_col_name := case_when(
-        is.na(!!sym(col1)) & !is.na(!!sym(col2)) ~ !!sym(col2),
-        !is.na(!!sym(col1)) & is.na(!!sym(col2)) ~ !!sym(col1),
-        is.na(!!sym(col1)) & is.na(!!sym(col2)) ~ NA,
-        !!sym(col1) == !!sym(col2) ~ !!sym(col1),
-        TRUE ~ stop(paste("Error: Values in columns", col1, "and", col2, "are different and both are non-NA"))
-      )
-    )
-  return(df)
-}
 
 
 compare_columns <- function(df_list, start_col, end_col) {

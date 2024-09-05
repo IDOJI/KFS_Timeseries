@@ -1,5 +1,7 @@
 # rm(list=ls())
 
+
+
 new_regions = function(data){
   data %>%
     mutate(regions = case_when(
@@ -26,8 +28,7 @@ new_regions = function(data){
     relocate(regions, .after = year)
 }
 
-
-BA_test = function(data, path_save, file_name, title){
+BA_test = function(data, path_save, file_name, title, width = 7, height = 6, label_size = 4, title_size = 18, xlab_size = 14, ylab_size = 14) {
   replace_na_with_zero <- function(vec) {
     # NA 값을 0으로 변환
     vec[is.na(vec)] <- 0
@@ -35,55 +36,36 @@ BA_test = function(data, path_save, file_name, title){
   }
   
   require(blandr)
-  names(data_forest)
-  # data :  ha
-  # data =data_forest
+  
+  # 데이터 처리
   dig = data$total_work_area_digital_ha %>% replace_na_with_zero 
   yb = data$total_work_area_yb %>% replace_na_with_zero 
   
+  # 라벨 생성
+  labels = paste(data$regions, data$year, sep = "_")
   
+  # Bland-Altman 플롯 생성
+  bland_altman_with_ci_and_labels(
+    method1 = dig,
+    method2 = yb, 
+    labels = labels, 
+    title = paste0("Bland-Altman Plot with C.I. : ", title),
+    label_size = label_size,   # 글자 크기 옵션 전달
+    title_size = title_size,   # 제목 크기 옵션 전달
+    xlab_size = xlab_size,     # x축 이름 글자 크기 옵션 전달
+    ylab_size = ylab_size      # y축 이름 글자 크기 옵션 전달
+  )
   
-  # data %>% View
-  # Perform Bland-Altman analysis and display the statistics
-  stats <- blandr.statistics(dig, yb)
-  
-  
-  # Display a Bland-Altman plot
-  blandr::blandr.display.and.draw(method1 = dig,
-                                  method2 = yb, 
-                                  method1name = "Digital", 
-                                  method2name = "YearBook", 
-                                  sig.level = 0.95, 
-                                  annotate = T, 
-                                  ciDisplay = T)
-  
-  
-  
-  # Plot using ggplot2
-  blandr.plot.ggplot(stats)
-  
-  
-  
-  
-  
-  # my function
-  labels = paste(data$regions, 
-                 data$year,
-                 sep = "_")
-  
-  bland_altman_with_ci_and_labels(method1 = dig,
-                                  method2 = yb, 
-                                  labels = labels, 
-                                  title = paste0("Bland-Altman Plot with C.I. : ", title))
-  
-  
-  # 생성된 플롯을 파일로 저장
-  ggsave(filename = file.path(path_save, file_name), 
-         plot = last_plot(), 
-         width = 4, height = 5, dpi = 300, bg = "white")
-  
+  # 플롯을 파일로 저장
+  ggsave(
+    filename = file.path(path_save, file_name), 
+    plot = last_plot(), 
+    width = width, 
+    height = height, 
+    dpi = 300, 
+    bg = "white"
+  )
 }
-
 
 # 필요한 패키지 설치 및 로드
 # install.packages("blandr")
@@ -93,11 +75,23 @@ library(blandr)
 library(ggplot2)
 library(showtext)
 # rm(list = ls())
+
+
+# Install the package
+# install.packages("BlandAltmanLeh")
+
+# Load the package
+# library(BlandAltmanLeh)
+# blandr::blandr.statistics
+
+
 # 한글 폰트 설정
 font_add_google("Nanum Gothic", "nanumgothic")
 showtext_auto()
-bland_altman_with_ci_and_labels <- function(method1, method2, labels, title = "Bland-Altman Plot", sig.level = 0.95) {
-  
+# Bland-Altman Plot Function with Clear Input Method Order
+bland_altman_with_ci_and_labels <- function(
+    method1, method2, labels, title = "Bland-Altman Plot", sig.level = 0.95, label_size = 4, title_size = 18, xlab_size = 14, ylab_size = 14
+) {
   # Bland-Altman 통계 계산
   stats <- blandr.statistics(method1, method2, sig.level = sig.level)
   
@@ -117,15 +111,15 @@ bland_altman_with_ci_and_labels <- function(method1, method2, labels, title = "B
   
   # 신뢰구간 수동 계산
   bias <- stats$bias
-  bias_se <- stats$biasSEM  # Bias의 표준오차
-  z_value <- qnorm(1 - (1 - sig.level) / 2)  # Z값 계산 (예: 95% 신뢰구간에 해당하는 z값)
+  bias_se <- stats$biasSEM
+  z_value <- qnorm(1 - (1 - sig.level) / 2)
   
   # Bias 신뢰구간
   bias_upper_ci <- bias + z_value * bias_se
   bias_lower_ci <- bias - z_value * bias_se
   
   # Limits of Agreement 신뢰구간 계산
-  loa_se <- stats$LOA_SEM  # Limits of Agreement의 표준오차
+  loa_se <- stats$LOA_SEM
   upper_loa_upper_ci <- upper_loa + z_value * loa_se
   upper_loa_lower_ci <- upper_loa - z_value * loa_se
   lower_loa_upper_ci <- lower_loa + z_value * loa_se
@@ -148,26 +142,26 @@ bland_altman_with_ci_and_labels <- function(method1, method2, labels, title = "B
     geom_ribbon(aes(ymin = lower_loa_lower_ci, ymax = lower_loa_upper_ci), alpha = 0.2, fill = "blue") +
     
     # Outlier 레이블 추가
-    geom_text(aes(label = labels_to_plot), vjust = -1, size = 4, family = "nanumgothic") +  # 한글 폰트 적용
+    geom_text(aes(label = labels_to_plot), vjust = -1, size = label_size, family = "nanumgothic") +  # 사용자 지정 글자 크기 적용
     
     # 제목 및 라벨
-    ggtitle(title) +  # 사용자가 지정한 제목 적용
+    ggtitle(title) +
     xlab("Mean of Two Methods") +
     ylab("Difference Between Two Methods") +
     
     # 폰트 및 글자 크기 설정
     theme_minimal() +
     theme(
-      text = element_text(family = "nanumgothic", size = 14),  # 기본 텍스트 크기
-      plot.title = element_text(size = 18, face = "bold"),  # 제목 크기 및 스타일
-      axis.title = element_text(size = 14),  # 축 제목 크기
-      axis.text = element_text(size = 12)    # 축 눈금 크기
+      text = element_text(family = "nanumgothic", size = 14),
+      plot.title = element_text(size = title_size, face = "bold", hjust = 0.5),  # 제목 크기 및 중앙 정렬
+      axis.title.x = element_text(size = xlab_size),  # x축 제목 글자 크기
+      axis.title.y = element_text(size = ylab_size),  # y축 제목 글자 크기
+      axis.text = element_text(size = 12)
     )
   
   # Plot 출력
   print(p)
 }
-
 
 # 특정 문자열이 포함되지 않은 행들을 추출하는 함수
 exclude_by_string <- function(data, column_index, search_string) {
