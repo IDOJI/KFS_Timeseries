@@ -28,7 +28,7 @@ new_regions = function(data){
     relocate(regions, .after = year)
 }
 
-BA_test = function(data, path_save, file_name, title, width = 7, height = 6, label_size = 4, title_size = 18, xlab_size = 14, ylab_size = 14) {
+BA_test = function(data, path_save, file_name, title, width = 7, height = 6, label_size = 4, title_size = 18, xlab_size = 14, ylab_size = 14, dig_col, yb_col) {
   replace_na_with_zero <- function(vec) {
     # NA 값을 0으로 변환
     vec[is.na(vec)] <- 0
@@ -38,8 +38,8 @@ BA_test = function(data, path_save, file_name, title, width = 7, height = 6, lab
   require(blandr)
   
   # 데이터 처리
-  dig = data$total_work_area_digital_ha %>% replace_na_with_zero 
-  yb = data$total_work_area_yb %>% replace_na_with_zero 
+  dig = data[[dig_col]] %>% replace_na_with_zero 
+  yb = data[[yb_col]] %>% replace_na_with_zero 
   
   # 라벨 생성
   labels = paste(data$regions, data$year, sep = "_")

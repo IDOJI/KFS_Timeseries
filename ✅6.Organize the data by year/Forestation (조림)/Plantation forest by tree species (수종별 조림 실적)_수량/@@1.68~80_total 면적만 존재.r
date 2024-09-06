@@ -123,19 +123,22 @@ combined_data <- path_data %>%
   }) %>% 
   do.call(rbind, .) %>% 
   mutate(year = as.character(year)) %>% 
-  arrange(classification, year) %>% 
-  # 이상한 데이터 제거
-  filter(!(year == "1979" & classification == "1966")) %>% 
-  filter(!(classification == "1966" & year == "1980")) %>% 
-  group_by(classification) %>%
-  filter(year == max(year)) %>%
-  ungroup() 
+  arrange(classification, year) 
+# %>% 
+#   # 이상한 데이터 제거
+#   filter(!(year == "1979" & classification == "1966")) %>% 
+#   filter(!(classification == "1966" & year == "1980")) %>% 
+#   group_by(classification) %>%
+#   filter(year == max(year)) %>%
+#   ungroup() 
 # %>% 
   # mutate(total_seedling_direct_new = conifer_total_seedling_direct + broad_total_seedling_direct + 기타_본수) %>% 
   # mutate(diff_abs_2 = abs(total_seedling_direct_new - total_seedling)) %>% View
 
 
+View(combined_data)
 
+combined_data %>% filter(classification == "1966") %>% write.xlsx(file.path(path_save, "1966.xlsx"))
 
 # 🟥 export  ===================================================================
 path_save = "/Users/Ido/Documents/GitHub/KFS_Timeseries_Data/4.Exported Data_by ID_2/조림/수종별 조림실적Plantation forest by tree species/Combined"
